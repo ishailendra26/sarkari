@@ -27,7 +27,7 @@ class Result {
         $conditions = [];
         $params = [];
         foreach ($words as $w) {
-            $conditions[] = "(title LIKE ? OR content LIKE ?)";
+            $conditions[] = "(title LIKE ? OR description LIKE ?)";
             $like = "%$w%";
             array_push($params, $like, $like);
         }
@@ -43,7 +43,7 @@ class Result {
         $conditions = [];
         $params = [];
         foreach ($words as $w) {
-            $conditions[] = "(title LIKE ? OR content LIKE ?)";
+            $conditions[] = "(title LIKE ? OR description LIKE ?)";
             $like = "%$w%";
             array_push($params, $like, $like);
         }

@@ -10,13 +10,30 @@ require_once __DIR__ . '/src/models/Category.php';
 require_once __DIR__ . '/src/models/Post.php';
 
 $query = isset($_GET['q']) ? sanitizeInput($_GET['q']) : '';
+// Normalize and validate inputs
 $type = isset($_GET['type']) ? sanitizeInput($_GET['type']) : 'all';
 $category = isset($_GET['category']) ? sanitizeInput($_GET['category']) : '';
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$page = max(1, $page);
 
-if (!$query) {
-    header('Location: index.php');
-    exit;
+// Whitelist allowed types and normalize invalid values
+$allowedTypes = ['all', 'jobs', 'results', 'admits', 'syllabus', 'posts'];
+if (!in_array($type, $allowedTypes, true)) {
+    $type = 'all';
+}
+
+// Category must either be empty or start with 'category-'
+if (!empty($category) && strpos($category, 'category-') !== 0) {
+    $category = '';
+}
+
+// Enforce minimum query length and avoid redirecting; show friendly message instead
+$errorMessage = '';
+$minQueryLen = 2;
+if (!trim($query)) {
+    $errorMessage = 'Please enter a search term.';
+} elseif (mb_strlen(trim($query)) < $minQueryLen) {
+    $errorMessage = "Please enter at least {$minQueryLen} characters.";
 }
 
 $jobModel = new Job();
@@ -30,61 +47,69 @@ $results = [];
 $totalResults = 0;
 $categories = $categoryModel->getAll();
 
-// Handle category-specific searches
-if ($category && strpos($category, 'category-') === 0) {
-    $categorySlug = substr($category, 9); // Remove 'category-' prefix
-    $categoryData = $categoryModel->getBySlug($categorySlug);
-    if ($categoryData) {
-        $results = $jobModel->searchByCategory($query, $categoryData['id'], POSTS_PER_PAGE, ($page - 1) * POSTS_PER_PAGE);
-        $totalResults = $jobModel->countSearchByCategory($query, $categoryData['id']);
-        $type = 'jobs';
+// Only execute searches when there is no input error
+if (!$errorMessage) {
+    // Handle category-specific searches
+    if ($category && strpos($category, 'category-') === 0) {
+        $categorySlug = substr($category, 9); // Remove 'category-' prefix
+        $categoryData = $categoryModel->getBySlug($categorySlug);
+        if ($categoryData) {
+            $results = $jobModel->searchByCategory($query, $categoryData['id'], POSTS_PER_PAGE, ($page - 1) * POSTS_PER_PAGE);
+            $totalResults = $jobModel->countSearchByCategory($query, $categoryData['id']);
+            $type = 'jobs';
+        } else {
+            // Invalid category slug - fall back gracefully to all types
+            $category = '';
+        }
     }
-} else {
-switch ($type) {
-    case 'jobs':
-        $results = $jobModel->search($query, POSTS_PER_PAGE, ($page - 1) * POSTS_PER_PAGE);
-        $totalResults = $jobModel->countSearch($query);
-        break;
-    case 'results':
-        $results = $resultModel->search($query, POSTS_PER_PAGE, ($page - 1) * POSTS_PER_PAGE);
-        $totalResults = $resultModel->countSearch($query);
-        break;
-    case 'admits':
-        $results = $admitModel->search($query, POSTS_PER_PAGE, ($page - 1) * POSTS_PER_PAGE);
-        $totalResults = $admitModel->countSearch($query);
-        break;
-    case 'syllabus':
-        $results = $syllabusModel->search($query, POSTS_PER_PAGE, ($page - 1) * POSTS_PER_PAGE);
-        $totalResults = $syllabusModel->countSearch($query);
-        break;
-    case 'posts':
-        $results = $postModel->search($query, POSTS_PER_PAGE, ($page - 1) * POSTS_PER_PAGE);
-        $totalResults = $postModel->countSearch($query);
-        break;
-    default:
-        // Search all types
-        $jobResults = $jobModel->search($query, 5, 0);
-        $resultResults = $resultModel->search($query, 5, 0);
-        $admitResults = $admitModel->search($query, 5, 0);
-        $syllabusResults = $syllabusModel->search($query, 5, 0);
-        $postResults = $postModel->search($query, 5, 0);
-        
-        $results = [
-            'jobs' => $jobResults,
-            'results' => $resultResults,
-            'admits' => $admitResults,
-            'syllabus' => $syllabusResults,
-            'posts' => $postResults
-        ];
-        
-        // Accurate total across types (not limited to the 5 we fetched)
-        $totalResults = $jobModel->countSearch($query)
-                        + $resultModel->countSearch($query)
-                        + $admitModel->countSearch($query)
-                        + $syllabusModel->countSearch($query)
-                        + $postModel->countSearch($query);
-        break;
-}
+
+    if (empty($category)) {
+        switch ($type) {
+            case 'jobs':
+                $results = $jobModel->search($query, POSTS_PER_PAGE, ($page - 1) * POSTS_PER_PAGE);
+                $totalResults = $jobModel->countSearch($query);
+                break;
+            case 'results':
+                $results = $resultModel->search($query, POSTS_PER_PAGE, ($page - 1) * POSTS_PER_PAGE);
+                $totalResults = $resultModel->countSearch($query);
+                break;
+            case 'admits':
+                $results = $admitModel->search($query, POSTS_PER_PAGE, ($page - 1) * POSTS_PER_PAGE);
+                $totalResults = $admitModel->countSearch($query);
+                break;
+            case 'syllabus':
+                $results = $syllabusModel->search($query, POSTS_PER_PAGE, ($page - 1) * POSTS_PER_PAGE);
+                $totalResults = $syllabusModel->countSearch($query);
+                break;
+            case 'posts':
+                $results = $postModel->search($query, POSTS_PER_PAGE, ($page - 1) * POSTS_PER_PAGE);
+                $totalResults = $postModel->countSearch($query);
+                break;
+            default:
+                // Search all types
+                $jobResults = $jobModel->search($query, 5, 0);
+                $resultResults = $resultModel->search($query, 5, 0);
+                $admitResults = $admitModel->search($query, 5, 0);
+                $syllabusResults = $syllabusModel->search($query, 5, 0);
+                $postResults = $postModel->search($query, 5, 0);
+
+                $results = [
+                    'jobs' => $jobResults,
+                    'results' => $resultResults,
+                    'admits' => $admitResults,
+                    'syllabus' => $syllabusResults,
+                    'posts' => $postResults
+                ];
+
+                // Accurate total across types (not limited to the 5 we fetched)
+                $totalResults = $jobModel->countSearch($query)
+                                + $resultModel->countSearch($query)
+                                + $admitModel->countSearch($query)
+                                + $syllabusModel->countSearch($query)
+                                + $postModel->countSearch($query);
+                break;
+        }
+    }
 }
 
 $pageTitle = "Search Results for '$query'";
@@ -130,6 +155,11 @@ include 'includes/header.php';
                     </div>
                 </div>
             </div>
+            <?php if (!empty($errorMessage)): ?>
+            <div class="mt-4 p-4 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-700">
+                <?= htmlspecialchars($errorMessage) ?>
+            </div>
+            <?php endif; ?>
             
             <p class="text-gray-600 mt-4">Found <?= $totalResults ?> results</p>
         </div>

@@ -55,7 +55,9 @@ CREATE TABLE posts (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NULL,
   FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
-  FOREIGN KEY (author_id) REFERENCES authors(id) ON DELETE SET NULL
+  FOREIGN KEY (author_id) REFERENCES authors(id) ON DELETE SET NULL,
+  FULLTEXT KEY ft_posts_main (title, excerpt, content),
+  KEY idx_posts_published_at (published_at)
 );
 
 -- junction post_tags
@@ -90,7 +92,10 @@ CREATE TABLE jobs (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NULL,
   FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
-  FOREIGN KEY (author_id) REFERENCES authors(id) ON DELETE SET NULL
+  FOREIGN KEY (author_id) REFERENCES authors(id) ON DELETE SET NULL,
+  FULLTEXT KEY ft_jobs_main (title, organization, location),
+  KEY idx_jobs_category_id (category_id),
+  KEY idx_jobs_published_at (published_at)
 );
 
 -- Results (final schema)
@@ -109,7 +114,9 @@ CREATE TABLE results (
   published_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NULL,
-  FOREIGN KEY (author_id) REFERENCES authors(id) ON DELETE SET NULL
+  FOREIGN KEY (author_id) REFERENCES authors(id) ON DELETE SET NULL,
+  FULLTEXT KEY ft_results_main (title, description),
+  KEY idx_results_published_at (published_at)
 );
 
 -- Admit cards (final schema)
@@ -130,7 +137,9 @@ CREATE TABLE admit_cards (
   published_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NULL,
-  FOREIGN KEY (author_id) REFERENCES authors(id) ON DELETE SET NULL
+  FOREIGN KEY (author_id) REFERENCES authors(id) ON DELETE SET NULL,
+  FULLTEXT KEY ft_admit_main (title, instructions, download_url),
+  KEY idx_admit_published_at (published_at)
 );
 
 -- Syllabus (structured, final schema)
@@ -150,7 +159,9 @@ CREATE TABLE syllabi (
   published_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NULL,
-  FOREIGN KEY (author_id) REFERENCES authors(id) ON DELETE SET NULL
+  FOREIGN KEY (author_id) REFERENCES authors(id) ON DELETE SET NULL,
+  FULLTEXT KEY ft_syllabus_main (title, sections),
+  KEY idx_syllabus_published_at (published_at)
 );
 
 -- basic site settings for admin

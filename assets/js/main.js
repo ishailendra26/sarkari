@@ -41,6 +41,7 @@
         }
 
     // Search functionality with category support
+    const MIN_QUERY_LEN = 2; // keep in sync with server-side validation
     const searchBtn = document.getElementById('search-btn');
     const searchInput = document.getElementById('search-input');
     const heroSearchBtn = document.getElementById('hero-search-btn');
@@ -59,22 +60,43 @@
     const searchQueryBtn = document.getElementById('search-query-btn');
     const searchQueryInput = document.getElementById('search-query');
 
+    // Utility: debounce
+    function debounce(fn, delay = 300) {
+        let t;
+        return function(...args) {
+            clearTimeout(t);
+            t = setTimeout(() => fn.apply(this, args), delay);
+        };
+    }
+
+    let isNavigating = false;
     function performSearch(query, type = 'all', category = '') {
-        if (query && query.trim()) {
-            let url = `search.php?q=${encodeURIComponent(query.trim())}`;
-            
-            if (category && category !== 'all') {
-                if (category.startsWith('category-')) {
-                    url += `&category=${encodeURIComponent(category)}`;
-                } else {
-                    url += `&type=${encodeURIComponent(category)}`;
-                }
-            } else if (type !== 'all') {
-                url += `&type=${encodeURIComponent(type)}`;
-            }
-            
-            window.location.href = url;
+        const q = (query || '').trim();
+        if (!q) {
+            showNotification('Please enter a search term.', 'error');
+            return;
         }
+        if (q.length < MIN_QUERY_LEN) {
+            showNotification(`Please enter at least ${MIN_QUERY_LEN} characters.`, 'error');
+            return;
+        }
+        if (isNavigating) return;
+        isNavigating = true;
+        setTimeout(() => { isNavigating = false; }, 1200);
+
+        let url = `search.php?q=${encodeURIComponent(q)}`;
+
+        if (category && category !== 'all') {
+            if (category.startsWith('category-')) {
+                url += `&category=${encodeURIComponent(category)}`;
+            } else {
+                url += `&type=${encodeURIComponent(category)}`;
+            }
+        } else if (type !== 'all') {
+            url += `&type=${encodeURIComponent(type)}`;
+        }
+
+        window.location.href = url;
     }
 
     // General search handlers
@@ -98,9 +120,9 @@
         };
 
         // Click for desktop and most devices
-        heroSearchBtn.addEventListener('click', handleHeroSearch, { passive: false });
+        heroSearchBtn.addEventListener('click', debounce(handleHeroSearch, 200), { passive: false });
         // Touchend for certain mobile browsers where click may be delayed or swallowed
-        heroSearchBtn.addEventListener('touchend', handleHeroSearch, { passive: false });
+        heroSearchBtn.addEventListener('touchend', debounce(handleHeroSearch, 200), { passive: false });
     }
 
     // Page-specific search handlers
@@ -134,11 +156,11 @@
 
     // Search page query button
     if (searchQueryBtn) {
-        searchQueryBtn.addEventListener('click', () => {
+        searchQueryBtn.addEventListener('click', debounce(() => {
             const query = searchQueryInput?.value;
             const category = searchCategorySelect?.value || 'all';
             performSearch(query, 'all', category);
-        });
+        }, 200));
     }
 
     // Enter key search for all inputs with category support
