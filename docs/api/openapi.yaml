@@ -1,0 +1,655 @@
+openapi: 3.0.3
+info:
+  title: Sarkari Jobs Read-only API
+  version: 1.0.0
+  description: |
+    Versioned, read-only REST API for the Sarkari Jobs portal.
+    
+    Base paths supported (no rewrites needed):
+    - http://localhost/sarkari/api/index.php/v1
+
+servers:
+  - url: https://examsz.in/api/index.php/v1
+    description: Production (no rewrite rules)
+  - url: http://localhost/sarkari/api/index.php/v1
+    description: Local XAMPP (no rewrite rules)
+
+tags:
+  - name: Jobs
+    description: Job listings and details
+  - name: Results
+    description: Exam results listings and details
+  - name: Admit Cards
+    description: Admit card listings and details
+  - name: Syllabi
+    description: Syllabus listings and details
+  - name: Posts
+    description: Articles and news posts listings and details
+
+components:
+  parameters:
+    q:
+      name: q
+      in: query
+      description: Search query (min 2 chars). If omitted, returns latest items.
+      required: false
+      schema:
+        type: string
+        minLength: 2
+        maxLength: 200
+    category:
+      name: category
+      in: query
+      description: Category slug to filter by (supported for jobs and posts list endpoints).
+      required: false
+      schema:
+        type: string
+        maxLength: 100
+    page:
+      name: page
+      in: query
+      description: Page number (1-based)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    per_page:
+      name: per_page
+      in: query
+      description: Items per page (1-50)
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 50
+        default: 10
+  schemas:
+    Envelope:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          description: Response payload (can be an object, list wrapper, or resource)
+    ErrorEnvelope:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: validation_error
+            message:
+              type: string
+              example: Query parameter q must be at least 2 characters
+    ListMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+        per_page:
+          type: integer
+        total:
+          type: integer
+        total_pages:
+          type: integer
+    ListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            description: Resource item (free-form; see examples)
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+    Job:
+      type: object
+      description: Job resource
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        slug: { type: string }
+        organization: { type: string }
+        location: { type: string, nullable: true }
+        apply_link: { type: string, nullable: true }
+        last_date:
+          type: string
+          format: date
+          nullable: true
+          description: Last apply date (YYYY-MM-DD)
+        vacancy_count: { type: integer, nullable: true }
+        educational_qualification: { type: string, nullable: true }
+        age_limit: { type: string, nullable: true }
+        category_id: { type: integer, nullable: true }
+        category_name: { type: string, nullable: true }
+        category_slug: { type: string, nullable: true }
+        content: { type: string, nullable: true }
+        attachments:
+          type: array
+          nullable: true
+          items:
+            type: object
+            additionalProperties: true
+        thumbnail_url: { type: string, nullable: true }
+        author_id: { type: integer, nullable: true }
+        status: { type: string, example: "published" }
+        published_at: { type: string, nullable: true }
+    Result:
+      type: object
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        slug: { type: string }
+        organization: { type: string }
+        description: { type: string, nullable: true }
+        result_date: { type: string, format: date, nullable: true }
+        download_url: { type: string, nullable: true }
+        thumbnail_url: { type: string, nullable: true }
+        author_id: { type: integer, nullable: true }
+        status: { type: string, example: "published" }
+        published_at: { type: string, nullable: true }
+    AdmitCard:
+      type: object
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        slug: { type: string }
+        organization: { type: string }
+        description: { type: string, nullable: true }
+        exam_date: { type: string, format: date, nullable: true }
+        download_url: { type: string, nullable: true }
+        instructions: { type: string, nullable: true }
+        required_documents: { type: string, nullable: true }
+        thumbnail_url: { type: string, nullable: true }
+        author_id: { type: integer, nullable: true }
+        status: { type: string, example: "published" }
+        published_at: { type: string, nullable: true }
+    Syllabus:
+      type: object
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        slug: { type: string }
+        organization: { type: string }
+        description: { type: string, nullable: true }
+        exam_date: { type: string, format: date, nullable: true }
+        download_url: { type: string, nullable: true }
+        sections: { type: string, nullable: true }
+        thumbnail_url: { type: string, nullable: true }
+        author_id: { type: integer, nullable: true }
+        status: { type: string, example: "published" }
+        published_at: { type: string, nullable: true }
+    Post:
+      type: object
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        slug: { type: string }
+        excerpt: { type: string, nullable: true }
+        content: { type: string }
+        category_id: { type: integer, nullable: true }
+        category_name: { type: string, nullable: true }
+        category_slug: { type: string, nullable: true }
+        status: { type: string, example: "published" }
+        meta_title: { type: string, nullable: true }
+        meta_description: { type: string, nullable: true }
+        thumbnail_url: { type: string, nullable: true }
+        author_id: { type: integer, nullable: true }
+        author_name: { type: string, nullable: true }
+        author_avatar: { type: string, nullable: true }
+        published_at: { type: string, nullable: true }
+
+paths:
+  /jobs:
+    get:
+      summary: List or search jobs
+      description: Returns latest jobs by default; supports full-text search and optional category filter.
+      tags: [Jobs]
+      operationId: listJobs
+      parameters:
+        - $ref: '#/components/parameters/q'
+        - $ref: '#/components/parameters/category'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/per_page'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+              examples:
+                list:
+                  value:
+                    success: true
+                    data:
+                      items:
+                        - id: 101
+                          title: SSC CGL 2025
+                          slug: ssc-cgl-2025
+                          organization: Staff Selection Commission
+                          location: India
+                          apply_link: https://ssc.nic.in/apply
+                          last_date: 2025-06-30
+                          vacancy_count: 7500
+                          educational_qualification: Graduate
+                          age_limit: 18-27 Years
+                          category_name: SSC
+                          category_slug: ssc
+                          published_at: 2025-05-01 10:00:00
+                        - id: 102
+                          title: RRB ALP Recruitment 2025
+                          slug: rrb-alp-2025
+                          organization: Indian Railways
+                          location: Pan India
+                          last_date: 2025-07-15
+                          vacancy_count: 10000
+                          category_name: Railway
+                          category_slug: railway
+                          published_at: 2025-05-03 12:00:00
+                      meta:
+                        page: 1
+                        per_page: 10
+                        total: 250
+                        total_pages: 25
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /jobs/{slug}:
+    get:
+      summary: Get a job by slug
+      description: Returns a single job object by its slug.
+      tags: [Jobs]
+      operationId: getJob
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+              examples:
+                detail:
+                  value:
+                    success: true
+                    data:
+                      id: 101
+                      title: SSC CGL 2025
+                      slug: ssc-cgl-2025
+                      organization: Staff Selection Commission
+                      location: India
+                      apply_link: https://ssc.nic.in/apply
+                      last_date: 2025-06-30
+                      vacancy_count: 7500
+                      educational_qualification: Graduate
+                      age_limit: 18-27 Years
+                      category_id: 5
+                      category_name: SSC
+                      category_slug: ssc
+                      content: "Full notification details..."
+                      thumbnail_url: https://example.com/img/ssc-cgl-2025.png
+                      status: published
+                      published_at: 2025-05-01 10:00:00
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /results:
+    get:
+      summary: List or search results
+      description: Returns latest results by default; supports full-text search on title and description.
+      tags: [Results]
+      operationId: listResults
+      parameters:
+        - $ref: '#/components/parameters/q'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/per_page'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+              examples:
+                list:
+                  value:
+                    success: true
+                    data:
+                      items:
+                        - id: 301
+                          title: SSC CGL 2024 Final Result
+                          slug: ssc-cgl-2024-final-result
+                          organization: Staff Selection Commission
+                          result_date: 2024-12-20
+                          download_url: https://ssc.nic.in/SSCFileServer/...
+                          published_at: 2024-12-20 09:00:00
+                        - id: 302
+                          title: UPSC CSE 2024 Prelims Result
+                          slug: upsc-cse-2024-prelims-result
+                          organization: UPSC
+                          result_date: 2024-07-10
+                          download_url: https://upsc.gov.in/documents/...
+                          published_at: 2024-07-10 12:30:00
+                      meta:
+                        page: 1
+                        per_page: 10
+                        total: 120
+                        total_pages: 12
+  /results/{slug}:
+    get:
+      summary: Get a result by slug
+      description: Returns a single result object by its slug.
+      tags: [Results]
+      operationId: getResult
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+              examples:
+                detail:
+                  value:
+                    success: true
+                    data:
+                      id: 301
+                      title: SSC CGL 2024 Final Result
+                      slug: ssc-cgl-2024-final-result
+                      organization: Staff Selection Commission
+                      description: "List of selected candidates for SSC CGL 2024."
+                      result_date: 2024-12-20
+                      download_url: https://ssc.nic.in/SSCFileServer/...
+                      thumbnail_url: https://example.com/img/ssc-result.png
+                      status: published
+                      published_at: 2024-12-20 09:00:00
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /admit-cards:
+    get:
+      summary: List or search admit cards
+      description: Returns latest admit cards by default; supports full-text search.
+      tags: [Admit Cards]
+      operationId: listAdmitCards
+      parameters:
+        - $ref: '#/components/parameters/q'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/per_page'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+              examples:
+                list:
+                  value:
+                    success: true
+                    data:
+                      items:
+                        - id: 401
+                          title: NTA JEE Main 2025 Admit Card
+                          slug: nta-jee-main-2025-admit-card
+                          organization: NTA
+                          exam_date: 2025-01-28
+                          download_url: https://jeemain.nta.ac.in/admit-card
+                          published_at: 2025-01-20 08:00:00
+                        - id: 402
+                          title: SSC CGL 2025 Tier-I Admit Card
+                          slug: ssc-cgl-2025-tier-1-admit-card
+                          organization: SSC
+                          exam_date: 2025-08-10
+                          download_url: https://ssc.nic.in/admit-card
+                          published_at: 2025-07-30 11:00:00
+                      meta:
+                        page: 1
+                        per_page: 10
+                        total: 80
+                        total_pages: 8
+  /admit-cards/{slug}:
+    get:
+      summary: Get an admit card by slug
+      description: Returns a single admit card object by its slug.
+      tags: [Admit Cards]
+      operationId: getAdmitCard
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+              examples:
+                detail:
+                  value:
+                    success: true
+                    data:
+                      id: 401
+                      title: NTA JEE Main 2025 Admit Card
+                      slug: nta-jee-main-2025-admit-card
+                      organization: NTA
+                      description: "Download JEE Main 2025 Admit Card from official portal."
+                      exam_date: 2025-01-28
+                      download_url: https://jeemain.nta.ac.in/admit-card
+                      instructions: "Carry photo ID and two passport size photos."
+                      required_documents: "Aadhar Card/Passport/Driving License"
+                      status: published
+                      published_at: 2025-01-20 08:00:00
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /syllabi:
+    get:
+      summary: List or search syllabi
+      description: Returns latest syllabi by default; supports full-text search.
+      tags: [Syllabi]
+      operationId: listSyllabi
+      parameters:
+        - $ref: '#/components/parameters/q'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/per_page'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+              examples:
+                list:
+                  value:
+                    success: true
+                    data:
+                      items:
+                        - id: 501
+                          title: UPSC CSE 2025 Syllabus
+                          slug: upsc-cse-2025-syllabus
+                          organization: UPSC
+                          exam_date: 2025-06-01
+                          download_url: https://upsc.gov.in/syllabus/...
+                          published_at: 2025-02-01 10:00:00
+                        - id: 502
+                          title: SSC CGL 2025 Syllabus
+                          slug: ssc-cgl-2025-syllabus
+                          organization: SSC
+                          exam_date: 2025-08-10
+                          download_url: https://ssc.nic.in/syllabus/...
+                          published_at: 2025-02-10 09:30:00
+                      meta:
+                        page: 1
+                        per_page: 10
+                        total: 65
+                        total_pages: 7
+  /syllabi/{slug}:
+    get:
+      summary: Get a syllabus by slug
+      description: Returns a single syllabus object by its slug.
+      tags: [Syllabi]
+      operationId: getSyllabus
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+              examples:
+                detail:
+                  value:
+                    success: true
+                    data:
+                      id: 501
+                      title: UPSC CSE 2025 Syllabus
+                      slug: upsc-cse-2025-syllabus
+                      organization: UPSC
+                      description: "Detailed syllabus for UPSC Civil Services Examination 2025."
+                      exam_date: 2025-06-01
+                      download_url: https://upsc.gov.in/syllabus/...
+                      sections: "Prelims GS, CSAT, Mains Papers..."
+                      status: published
+                      published_at: 2025-02-01 10:00:00
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /posts:
+    get:
+      summary: List or search posts
+      description: Returns latest posts by default; supports full-text search and optional category filter.
+      tags: [Posts]
+      operationId: listPosts
+      parameters:
+        - $ref: '#/components/parameters/q'
+        - $ref: '#/components/parameters/category'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/per_page'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+              examples:
+                list:
+                  value:
+                    success: true
+                    data:
+                      items:
+                        - id: 601
+                          title: How to Prepare for SSC CGL
+                          slug: how-to-prepare-for-ssc-cgl
+                          excerpt: "Top tips and resources to crack SSC CGL."
+                          category_name: Guides
+                          category_slug: guides
+                          author_name: Editor Team
+                          published_at: 2025-03-05 14:00:00
+                        - id: 602
+                          title: Upcoming Railway Exams in 2025
+                          slug: upcoming-railway-exams-2025
+                          excerpt: "Complete schedule and syllabus coverage."
+                          category_name: Updates
+                          category_slug: updates
+                          author_name: Editor Team
+                          published_at: 2025-03-10 10:00:00
+                      meta:
+                        page: 1
+                        per_page: 10
+                        total: 420
+                        total_pages: 42
+  /posts/{slug}:
+    get:
+      summary: Get a post by slug
+      description: Returns a single post object by its slug.
+      tags: [Posts]
+      operationId: getPost
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope'
+              examples:
+                detail:
+                  value:
+                    success: true
+                    data:
+                      id: 601
+                      title: How to Prepare for SSC CGL
+                      slug: how-to-prepare-for-ssc-cgl
+                      excerpt: "Top tips and resources to crack SSC CGL."
+                      content: "Long-form article content..."
+                      category_id: 12
+                      category_name: Guides
+                      category_slug: guides
+                      status: published
+                      meta_title: "SSC CGL Preparation Guide"
+                      meta_description: "Preparation tips for SSC CGL exam."
+                      thumbnail_url: https://example.com/img/ssc-guide.png
+                      author_id: 2
+                      author_name: Editor Team
+                      published_at: 2025-03-05 14:00:00
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'

@@ -1,0 +1,88 @@
+{
+  "info": {
+    "_postman_id": "3c8d0f66-0f49-4f38-9fd0-9f0b5b8c7b77",
+    "name": "Sarkari Jobs API v1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Read-only API for Sarkari Jobs. Base URL uses index.php for local XAMPP without rewrites."
+  },
+  "item": [
+    {
+      "name": "Jobs",
+      "item": [
+        {
+          "name": "List Jobs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Accept", "value": "application/json"}
+            ],
+            "url": {"raw": "{{baseUrl}}/jobs?page=1&per_page=10", "host": ["{{baseUrl}}"], "path": ["jobs"], "query": [
+              {"key": "page", "value": "1"},
+              {"key": "per_page", "value": "10"}
+            ]}
+          }
+        },
+        {
+          "name": "Search Jobs",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": {"raw": "{{baseUrl}}/jobs?q=railway&category=bank", "host": ["{{baseUrl}}"], "path": ["jobs"], "query": [
+              {"key": "q", "value": "railway"},
+              {"key": "category", "value": "bank"}
+            ]}
+          }
+        },
+        {
+          "name": "Job Detail",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": {"raw": "{{baseUrl}}/jobs/{{jobSlug}}", "host": ["{{baseUrl}}"], "path": ["jobs", "{{jobSlug}}"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Results",
+      "item": [
+        {"name": "List Results", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": {"raw": "{{baseUrl}}/results?page=1&per_page=10", "host": ["{{baseUrl}}"], "path": ["results"], "query": [{"key": "page", "value": "1"}, {"key": "per_page", "value": "10"}]}}},
+        {"name": "Search Results", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": {"raw": "{{baseUrl}}/results?q=ssc", "host": ["{{baseUrl}}"], "path": ["results"], "query": [{"key": "q", "value": "ssc"}]}}},
+        {"name": "Result Detail", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": {"raw": "{{baseUrl}}/results/{{resultSlug}}", "host": ["{{baseUrl}}"], "path": ["results", "{{resultSlug}}"]}}}
+      ]
+    },
+    {
+      "name": "Admit Cards",
+      "item": [
+        {"name": "List Admit Cards", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": {"raw": "{{baseUrl}}/admit-cards?page=1&per_page=10", "host": ["{{baseUrl}}"], "path": ["admit-cards"], "query": [{"key": "page", "value": "1"}, {"key": "per_page", "value": "10"}]}}},
+        {"name": "Search Admit Cards", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": {"raw": "{{baseUrl}}/admit-cards?q=nta", "host": ["{{baseUrl}}"], "path": ["admit-cards"], "query": [{"key": "q", "value": "nta"}]}}},
+        {"name": "Admit Card Detail", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": {"raw": "{{baseUrl}}/admit-cards/{{admitSlug}}", "host": ["{{baseUrl}}"], "path": ["admit-cards", "{{admitSlug}}"]}}}
+      ]
+    },
+    {
+      "name": "Syllabi",
+      "item": [
+        {"name": "List Syllabi", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": {"raw": "{{baseUrl}}/syllabi?page=1&per_page=10", "host": ["{{baseUrl}}"], "path": ["syllabi"], "query": [{"key": "page", "value": "1"}, {"key": "per_page", "value": "10"}]}}},
+        {"name": "Search Syllabi", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": {"raw": "{{baseUrl}}/syllabi?q=upsc", "host": ["{{baseUrl}}"], "path": ["syllabi"], "query": [{"key": "q", "value": "upsc"}]}}},
+        {"name": "Syllabus Detail", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": {"raw": "{{baseUrl}}/syllabi/{{syllabusSlug}}", "host": ["{{baseUrl}}"], "path": ["syllabi", "{{syllabusSlug}}"]}}}
+      ]
+    },
+    {
+      "name": "Posts",
+      "item": [
+        {"name": "List Posts", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": {"raw": "{{baseUrl}}/posts?page=1&per_page=10", "host": ["{{baseUrl}}"], "path": ["posts"], "query": [{"key": "page", "value": "1"}, {"key": "per_page", "value": "10"}]}}},
+        {"name": "List Posts by Category", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": {"raw": "{{baseUrl}}/posts?category=guides", "host": ["{{baseUrl}}"], "path": ["posts"], "query": [{"key": "category", "value": "guides"}]}}},
+        {"name": "Search Posts", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": {"raw": "{{baseUrl}}/posts?q=scholarship", "host": ["{{baseUrl}}"], "path": ["posts"], "query": [{"key": "q", "value": "scholarship"}]}}},
+        {"name": "Post Detail", "request": {"method": "GET", "header": [{"key": "Accept", "value": "application/json"}], "url": {"raw": "{{baseUrl}}/posts/{{postSlug}}", "host": ["{{baseUrl}}"], "path": ["posts", "{{postSlug}}"]}}}
+      ]
+    }
+  ],
+  "variable": [
+    {"key": "baseUrl", "value": "https://examsz.in/api/index.php/v1"},
+    {"key": "jobSlug", "value": "sample-job-slug"},
+    {"key": "resultSlug", "value": "sample-result-slug"},
+    {"key": "admitSlug", "value": "sample-admit-slug"},
+    {"key": "syllabusSlug", "value": "sample-syllabus-slug"},
+    {"key": "postSlug", "value": "sample-post-slug"}
+  ]
+}
