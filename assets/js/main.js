@@ -86,11 +86,21 @@
     }
 
     if (heroSearchBtn) {
-        heroSearchBtn.addEventListener('click', () => {
+        const handleHeroSearch = (e) => {
+            if (e) {
+                // Prevent duplicate navigations on some mobile browsers
+                e.preventDefault();
+                e.stopPropagation();
+            }
             const query = heroSearch?.value;
             const category = heroSearchCategory?.value || 'all';
             performSearch(query, 'all', category);
-        });
+        };
+
+        // Click for desktop and most devices
+        heroSearchBtn.addEventListener('click', handleHeroSearch, { passive: false });
+        // Touchend for certain mobile browsers where click may be delayed or swallowed
+        heroSearchBtn.addEventListener('touchend', handleHeroSearch, { passive: false });
     }
 
     // Page-specific search handlers

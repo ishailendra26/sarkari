@@ -146,7 +146,7 @@ include 'includes/header.php';
 
                         <!-- Search Button (keep ID for JS) -->
                         <div class="flex">
-                            <button id="hero-search-btn" class="w-full md:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-secondary to-rose-600 hover:from-rose-600 hover:to-rose-700 px-6 md:px-8 py-3.5 md:py-3 rounded-xl font-semibold shadow-lg shadow-rose-900/20 transition-colors min-h-[48px]" aria-label="Search">
+                            <button id="hero-search-btn" type="button" class="w-full md:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-secondary to-rose-600 hover:from-rose-600 hover:to-rose-700 px-6 md:px-8 py-3.5 md:py-3 rounded-xl font-semibold shadow-lg shadow-rose-900/20 transition-colors min-h-[48px]" aria-label="Search">
                                 <i class="fas fa-magnifying-glass"></i>
                                 Search
                             </button>
