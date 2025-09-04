@@ -1,13 +1,13 @@
 <?php
 // Database Configuration
 define('DB_HOST', 'localhost');
-define('DB_NAME', 'u163236363_ez');
-define('DB_USER', 'u163236363_ez');
-define('DB_PASS', 'Shailu26ap@');
+define('DB_NAME', 'sarkari');
+define('DB_USER', 'root');
+define('DB_PASS', '');
 
 // Site Configuration
 define('SITE_NAME', 'Examsz - Your Exam Success Partner | Jobs, Results, Admit Cards & Syllabus | Mock Tests');
-define('SITE_URL', 'https://examsz.in');
+define('SITE_URL', 'http://localhost/sarkari/');
 define('SITE_DESCRIPTION', 'Latest Government Jobs, Results, Admit Cards & Syllabus | Mock Tests');
 
 // Community / Social Channels
