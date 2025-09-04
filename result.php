@@ -27,7 +27,7 @@ if (!$result) {
 }
 
 $pageTitle = $result['title'];
-$metaDescription = $result['description'] ? excerpt(strip_tags($result['description']), 160) : "Download " . $result['title'] . " exam result.";
+$metaDescription = $result['description'] ? excerpt(strip_tags($result['description']), 50) : "Download " . $result['title'] . " exam result.";
 $currentPage = 'results';
 
 // Build flexible content (extras) from polymorphic tables

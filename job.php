@@ -32,7 +32,7 @@ if (!$job) {
 $attachments = $job['attachments'] ? json_decode($job['attachments'], true) : [];
 
 $pageTitle = $job['title'];
-$metaDescription = $job['content'] ? excerpt(strip_tags($job['content']), 160) : "Apply for " . $job['title'] . " at " . $job['organization'];
+$metaDescription = $job['content'] ? excerpt(strip_tags($job['content']), 50) : "Apply for " . $job['title'] . " at " . $job['organization'];
 $currentPage = 'jobs';
 
 // Build flexible content (extras) from polymorphic tables in a strict order

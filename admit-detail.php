@@ -33,7 +33,7 @@ $relatedAdmits = array_filter($relatedAdmits, function($item) use ($admit) {
 });
 
 $pageTitle = $admit['title'];
-$metaDescription = excerpt($admit['description'] ?? $admit['title'], 160);
+$metaDescription = excerpt($admit['description'] ?? $admit['title'], 50);
 $currentPage = 'admit';
 
 // Build flexible content (extras) like result screen in strict order

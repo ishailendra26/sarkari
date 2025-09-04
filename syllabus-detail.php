@@ -33,7 +33,7 @@ $relatedSyllabus = array_filter($relatedSyllabus, function($item) use ($syllabus
 });
 
 $pageTitle = $syllabus['title'];
-$metaDescription = excerpt($syllabus['description'] ?? $syllabus['title'], 160);
+$metaDescription = excerpt($syllabus['description'] ?? $syllabus['title'], 50);
 $currentPage = 'syllabus';
 
 // Parse sections JSON

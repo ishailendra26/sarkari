@@ -26,7 +26,7 @@ if (!$post) {
 }
 
 $pageTitle = $post['meta_title'] ?: $post['title'];
-$metaDescription = $post['meta_description'] ?: ($post['excerpt'] ? excerpt(strip_tags($post['excerpt']), 160) : excerpt(strip_tags($post['content']), 160));
+$metaDescription = $post['meta_description'] ?: ($post['excerpt'] ? excerpt(strip_tags($post['excerpt']), 50) : excerpt(strip_tags($post['content']), 160));
 $currentPage = 'posts';
 
 // Canonical & JSON-LD
