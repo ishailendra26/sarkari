@@ -1,0 +1,26 @@
+# Enable Apache rewrite engine
+RewriteEngine On
+RewriteBase /sarkari/
+
+# Serve existing files/directories directly
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Listing pages (extension-less)
+RewriteRule ^jobs$ jobs.php [L,QSA]
+RewriteRule ^results$ results.php [L,QSA]
+RewriteRule ^admit$ admit.php [L,QSA]
+RewriteRule ^syllabus$ syllabus.php [L,QSA]
+RewriteRule ^posts$ posts.php [L,QSA]
+
+# Detail pages by slug
+RewriteRule ^job/([^/]+)$ job.php?slug=$1 [L,QSA]
+RewriteRule ^result/([^/]+)$ result.php?slug=$1 [L,QSA]
+RewriteRule ^admit/([^/]+)$ admit-detail.php?slug=$1 [L,QSA]
+RewriteRule ^author/([^/]+)$ author.php?slug=$1 [L,QSA]
+RewriteRule ^syllabus/([^/]+)$ syllabus-detail.php?slug=$1 [L,QSA]
+RewriteRule ^post/([^/]+)$ post.php?slug=$1 [L,QSA]
+
+# Categories under jobs
+RewriteRule ^jobs/([^/]+)$ jobs.php?category=$1 [L,QSA]

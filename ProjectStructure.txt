@@ -1,0 +1,283 @@
+# SarkariJobs Portal - Project Structure
+
+This reflects the actual repository layout. The repository root is the web root for local XAMPP.
+
+## 📁 Directory Organization
+
+```
+sarkari/
+├── assets/                     # Static assets
+│   ├── css/                   # Custom stylesheets
+│   └── js/                    # JavaScript files
+│
+├── uploads/                   # User-uploaded files
+│
+├── src/                       # Core application
+│   ├── models/               # Data models (Job, Result, AdmitCard, Syllabus, Category, Author, ...)
+│   ├── config.php            # Application configuration
+│   ├── db.php                # PDO database wrapper
+│   └── helpers.php           # Utility and SEO helpers
+│
+├── admin/                     # Admin panel
+│   ├── includes/            # Header/footer for admin
+│   ├── *.php                # Dashboard, CRUD pages (jobs, results, admit, syllabus, categories, authors, settings)
+│   └── .htaccess            # Admin-specific rules
+│
+├── migrations/                # SQL migrations (executed by setup.php)
+│   ├── 001_init.sql
+│   ├── 002_content_extensions.sql
+│   └── 003_align_models.sql
+│
+├── .htaccess                  # Root rewrite rules for SEO-friendly URLs
+├── index.php                  # Homepage and router helpers
+├── jobs.php                   # Job listings
+├── job.php                    # Job details
+├── results.php                # Results listings
+├── result.php                 # Result details
+├── admit.php                  # Admit card listings
+├── admit-detail.php           # Admit card details
+├── syllabus.php               # Syllabus listings
+├── syllabus-detail.php        # Syllabus details
+├── search.php                 # Global search
+├── sitemap.xml.php            # SEO sitemap
+├── 404.php                    # Error page
+├── setup.php                  # DB bootstrap (runs sarkari.sql + migrations)
+├── sarkari.sql                # Canonical schema snapshot
+├── README.md                  # Project documentation
+├── DEPLOYMENT_GUIDE.md        # Production deployment guide
+└── ProjectStructure.txt       # This file
+```
+
+## 🏗️ Architecture Overview
+
+### MVC Pattern Implementation
+
+**Models (`src/models/`)**
+- Handle all database operations
+- Contain business logic
+- Provide data validation
+- Return structured data arrays
+
+**Views (Frontend Pages)**
+- Located in repository root (web root in XAMPP)
+- Use PHP for dynamic content
+- Styled with Tailwind CSS
+- Mobile-responsive design
+
+**Controllers (Implicit)**
+- Logic embedded in page files
+- Handle form submissions
+- Manage user sessions
+- Process search queries
+
+### Database Layer (`src/db.php`)
+- Singleton pattern for connection
+- PDO with prepared statements
+- Error handling and logging
+- Connection pooling
+
+### Configuration (`src/config.php`)
+- Centralized settings
+- Environment-specific configs
+- Security parameters
+- Feature toggles
+
+### Utilities (`src/helpers.php`)
+- Common functions
+- Data formatting
+- SEO helpers
+- Security utilities
+
+## 📊 Data Models
+
+### Job Model (`src/models/Job.php`)
+```php
+- getAll($limit, $offset, $category)
+- getBySlug($slug)
+- getLatest($limit)
+- getExpiringSoon($days, $limit)
+- search($query, $limit, $offset)
+- getCount($category)
+- create($data)
+- update($id, $data)
+- delete($id)
+```
+
+### Result Model (`src/models/Result.php`)
+```php
+- getAll($limit, $offset, $category)
+- getBySlug($slug)
+- getLatest($limit)
+- search($query, $limit, $offset)
+- getCount($category)
+- create($data)
+- update($id, $data)
+- delete($id)
+```
+
+### AdmitCard Model (`src/models/AdmitCard.php`)
+```php
+- getAll($limit, $offset, $category)
+- getBySlug($slug)
+- getLatest($limit)
+- search($query, $limit, $offset)
+- getCount($category)
+- create($data)
+- update($id, $data)
+- delete($id)
+```
+
+### Syllabus Model (`src/models/Syllabus.php`)
+```php
+- getAll($limit, $offset, $category)
+- getBySlug($slug)
+- getLatest($limit)
+- search($query, $limit, $offset)
+- getCount($category)
+- create($data)
+- update($id, $data)
+- delete($id)
+- getSections($syllabusId) # JSON parsing
+```
+
+### Category Model (`src/models/Category.php`)
+```php
+- getAll()
+- getBySlug($slug)
+- getJobCount($categoryId)
+- create($data)
+- update($id, $data)
+- delete($id)
+```
+
+## 🔧 Admin Panel Structure
+
+### Dashboard (`admin/index.php`)
+- Statistics overview
+- Quick action buttons
+- Recent content display
+- System health checks
+
+### Content Management
+- **Jobs**: Full CRUD with category assignment
+- **Results**: File upload and download management
+- **Admit Cards**: Hall ticket management
+- **Syllabus**: JSON-based section management
+- **Categories**: Hierarchical category system
+
+### Security Features
+- Session-based authentication
+- CSRF token validation
+- Input sanitization
+- File upload restrictions
+
+## 🔄 Data Flow
+
+### Frontend Request Flow
+1. User visits page (e.g., `/sarkari/jobs` via rewrite to `jobs.php`)
+2. Page includes required models
+3. Model queries database
+4. Data processed and displayed
+5. HTML rendered with Tailwind CSS
+
+### Admin Panel Flow
+1. Admin logs in (`admin/login.php`)
+2. Session validation on each page
+3. Form submission to add/edit pages
+4. Data validation and sanitization
+5. Database update via models
+6. Redirect with success/error message
+
+## 🛡️ Security Implementation
+
+### Input Validation
+- All forms use `htmlspecialchars()`
+- Database queries use prepared statements
+- File uploads validated by type and size
+- Session tokens prevent CSRF
+
+### Access Control
+- Admin pages check session validity
+- `.htaccess` files protect sensitive directories
+- Database credentials in separate config
+- Error reporting disabled in production
+
+## 📈 Performance Optimizations
+
+### Database
+- Proper indexing on frequently queried columns
+- Pagination to limit result sets
+- Efficient JOIN queries
+- Connection reuse via singleton
+
+### Frontend
+- Tailwind CSS for minimal CSS
+- Optimized images and assets
+- Gzip compression enabled
+- Browser caching headers
+
+### Caching Strategy
+- Static file caching via .htaccess
+- Database query result caching (future)
+- CDN integration ready (future)
+
+## 🔍 SEO Implementation
+
+### URL Structure
+- Clean, descriptive, extension-less URLs
+- Slug-based access for all content types
+- Category page URLs
+- XML sitemap generation
+Examples:
+- Jobs: `/sarkari/job/{slug}`
+- Results: `/sarkari/result/{slug}`
+- Admit Cards: `/sarkari/admit/{slug}`
+- Syllabus: `/sarkari/syllabus/{slug}`
+- Categories: `/sarkari/jobs/{category}`
+
+### Meta Tags
+- Dynamic title generation
+- Category-specific descriptions
+- Open Graph tags ready
+- Schema markup ready
+
+## 🚀 Deployment Strategy
+
+### Development Environment
+- XAMPP/WAMP for local development
+- Debug mode enabled
+- Error reporting active
+- File permissions relaxed
+
+### Production Environment
+- Linux-based hosting recommended
+- SSL certificate required
+- Error reporting disabled
+- Strict file permissions
+- Database backup automation
+
+## 🔧 Maintenance Guidelines
+
+### Code Standards
+- PSR-4 autoloading ready
+- Consistent naming conventions
+- Proper error handling
+- Documentation in code
+
+### Database Maintenance
+- Regular backup schedule
+- Index optimization
+- Query performance monitoring
+- Data archival strategy
+
+### Security Updates
+- Regular PHP/MySQL updates
+- Dependency vulnerability scanning
+- Access log monitoring
+- Security header implementation
+
+---
+
+**Last Updated**: September 2025
+**Version**: 1.0.0
+**Maintainer**: Development Team
