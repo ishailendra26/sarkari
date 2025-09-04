@@ -119,7 +119,7 @@ CREATE TABLE admit_cards (
   slug VARCHAR(255) UNIQUE,
   organization VARCHAR(150) NULL,
   description LONGTEXT NULL,
-  exam_date DATE NULL,
+  exam_date VARCHAR(100) NULL,
   download_url VARCHAR(500) NULL,
   instructions LONGTEXT NULL,
   required_documents LONGTEXT NULL,

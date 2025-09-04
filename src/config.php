@@ -7,7 +7,7 @@ define('DB_PASS', '');
 
 // Site Configuration
 define('SITE_NAME', 'Examsz - Your Exam Success Partner | Jobs, Results, Admit Cards & Syllabus | Mock Tests');
-define('SITE_URL', 'http://localhost/sarkari/');
+define('SITE_URL', 'http://localhost/sarkari');
 define('SITE_DESCRIPTION', 'Latest Government Jobs, Results, Admit Cards & Syllabus | Mock Tests');
 
 // Community / Social Channels

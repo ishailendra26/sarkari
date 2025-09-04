@@ -89,19 +89,24 @@ include 'includes/header.php';
                             </td>
                             <td class="text-gray-600"><?= htmlspecialchars($admitCard['organization']) ?></td>
                             <td>
-                                <?php if ($admitCard['exam_date']): ?>
+                                <?php if (!empty($admitCard['exam_date'])): ?>
+                                <?php $ts = strtotime($admitCard['exam_date']); ?>
+                                <?php if ($ts): ?>
                                 <?php 
-                                $isUpcoming = strtotime($admitCard['exam_date']) > time();
-                                $daysLeft = floor((strtotime($admitCard['exam_date']) - time()) / 86400);
+                                  $isUpcoming = $ts > time();
+                                  $daysLeft = floor(($ts - time()) / 86400);
                                 ?>
                                 <div class="text-sm <?= $isUpcoming ? ($daysLeft <= 7 ? 'text-yellow-600' : 'text-gray-600') : 'text-red-600' ?>">
-                                    <?= formatDate($admitCard['exam_date']) ?>
+                                    <?= formatDate(date('Y-m-d', $ts)) ?>
                                     <?php if ($isUpcoming && $daysLeft >= 0): ?>
                                     <br><span class="text-xs"><?= $daysLeft ?> days left</span>
                                     <?php elseif (!$isUpcoming): ?>
                                     <br><span class="text-xs">Completed</span>
                                     <?php endif; ?>
                                 </div>
+                                <?php else: ?>
+                                <div class="text-sm text-gray-600"><?= htmlspecialchars($admitCard['exam_date']) ?></div>
+                                <?php endif; ?>
                                 <?php else: ?>
                                 <span class="text-gray-400">Not set</span>
                                 <?php endif; ?>

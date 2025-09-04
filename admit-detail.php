@@ -129,10 +129,15 @@ include 'includes/header.php';
                         </div>
                         
                         <div class="flex flex-wrap justify-center gap-4 text-sm text-gray-600 mb-6">
-                            <?php if ($admit['exam_date']): ?>
+                            <?php if (!empty($admit['exam_date'])): ?>
+                            <?php $ts = strtotime($admit['exam_date']); ?>
                             <div class="flex items-center">
                                 <i class="fas fa-calendar mr-2 text-yellow-600"></i>
-                                Exam Date: <?= formatDate($admit['exam_date']) ?>
+                                <?php if ($ts): ?>
+                                    Exam Date: <?= formatDate(date('Y-m-d', $ts)) ?>
+                                <?php else: ?>
+                                    Exam Date: <?= htmlspecialchars($admit['exam_date']) ?>
+                                <?php endif; ?>
                             </div>
                             <?php endif; ?>
 
