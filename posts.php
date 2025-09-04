@@ -109,7 +109,7 @@ include 'includes/header.php';
                 <article class="bg-white rounded-lg shadow-md overflow-hidden card-hover">
                     <?php if (!empty($thumb)): ?>
                     <a href="<?= SITE_URL ?>/post/<?= urlencode($p['slug']) ?>" class="block aspect-[16/9] bg-gray-100">
-                        <img src="<?= htmlspecialchars($thumb) ?>" alt="<?= htmlspecialchars($p['title']) ?>" class="w-full h-full object-cover" loading="lazy">
+                        <img src="<?= htmlspecialchars($thumb) ?>" alt="<?= htmlspecialchars($p['title']) ?>" class="w-full h-full object-contain" loading="lazy">
                     </a>
                     <?php else: ?>
                     <a href="<?= SITE_URL ?>/post/<?= urlencode($p['slug']) ?>" class="block aspect-[16/9] bg-gray-100 flex items-center justify-center text-gray-400">

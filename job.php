@@ -183,7 +183,9 @@ include 'includes/header.php';
                         <!-- Job Header -->
                         <div class="mb-6">
                             <?php if (!empty($job['thumbnail_url'])): ?>
-                            <img src="<?= htmlspecialchars($job['thumbnail_url']) ?>" alt="<?= htmlspecialchars($job['title']) ?>" class="w-full h-56 object-cover rounded-lg mb-4">
+                            <div class="w-full aspect-[16/9] bg-gray-100 rounded-lg mb-4 overflow-hidden">
+                                <img src="<?= htmlspecialchars($job['thumbnail_url']) ?>" alt="<?= htmlspecialchars($job['title']) ?>" class="w-full h-full object-contain">
+                            </div>
                             <?php endif; ?>
                             <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-4"><?= htmlspecialchars($job['title']) ?></h1>
                             <div class="mb-3">

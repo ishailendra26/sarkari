@@ -87,8 +87,9 @@ include 'includes/header.php';
                         
                         <div>
                             <label class="form-label">Exam Date</label>
-                            <input type="date" name="exam_date" class="form-input" 
-                                   value="<?= htmlspecialchars($_POST['exam_date'] ?? '') ?>">
+                            <input type="text" name="exam_date" class="form-input" 
+                                   value="<?= htmlspecialchars($_POST['exam_date'] ?? '') ?>"
+                                   placeholder="e.g., 2025-10-15 or 10-15 October 2025">
                         </div>
                         
                         <div class="md:col-span-2">

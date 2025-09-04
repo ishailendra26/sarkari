@@ -69,7 +69,9 @@ include 'includes/header.php';
                     <!-- Header -->
                     <div class="text-center mb-8">
                         <?php if (!empty($syllabus['thumbnail_url'])): ?>
-                        <img src="<?= htmlspecialchars($syllabus['thumbnail_url']) ?>" alt="<?= htmlspecialchars($syllabus['title']) ?>" class="w-full h-56 object-cover rounded-lg mb-4">
+                        <div class="w-full aspect-[16/9] bg-gray-100 rounded-lg mb-4 overflow-hidden">
+                            <img src="<?= htmlspecialchars($syllabus['thumbnail_url']) ?>" alt="<?= htmlspecialchars($syllabus['title']) ?>" class="w-full h-full object-contain">
+                        </div>
                         <?php else: ?>
                         <div class="inline-flex items-center justify-center w-16 h-16 bg-purple-100 rounded-full mb-4">
                             <i class="fas fa-book text-purple-600 text-2xl"></i>

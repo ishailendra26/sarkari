@@ -175,7 +175,7 @@ include 'includes/header.php';
                         <?php if ($job['educational_qualification']): ?>
                         <div class="flex items-center md:col-span-2">
                             <i class="fas fa-graduation-cap w-4 mr-2 text-primary"></i>
-                            <?= htmlspecialchars(excerpt($job['educational_qualification'], 50)) ?>
+                            <?= htmlspecialchars(excerpt(strip_tags($job['educational_qualification']), 50)) ?>
                         </div>
                         <?php endif; ?>
                     </div>

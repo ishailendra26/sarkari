@@ -114,7 +114,9 @@ include 'includes/header.php';
 
                     <?php if (!empty($heroImage)): ?>
                     <figure class="mb-6">
-                        <img src="<?= htmlspecialchars($heroImage) ?>" alt="<?= htmlspecialchars($post['title']) ?>" class="w-full rounded-lg object-cover">
+                        <div class="w-full aspect-[16/9] bg-gray-100 rounded-lg overflow-hidden">
+                            <img src="<?= htmlspecialchars($heroImage) ?>" alt="<?= htmlspecialchars($post['title']) ?>" class="w-full h-full object-contain">
+                        </div>
                     </figure>
                     <?php endif; ?>
 

@@ -117,7 +117,9 @@ include 'includes/header.php';
                     <!-- Header -->
                     <div class="text-center mb-8">
                         <?php if (!empty($admit['thumbnail_url'])): ?>
-                        <img src="<?= htmlspecialchars($admit['thumbnail_url']) ?>" alt="<?= htmlspecialchars($admit['title']) ?>" class="w-full h-56 object-cover rounded-lg mb-4">
+                        <div class="w-full aspect-[16/9] bg-gray-100 rounded-lg mb-4 overflow-hidden">
+                            <img src="<?= htmlspecialchars($admit['thumbnail_url']) ?>" alt="<?= htmlspecialchars($admit['title']) ?>" class="w-full h-full object-contain">
+                        </div>
                         <?php else: ?>
                         <div class="inline-flex items-center justify-center w-16 h-16 bg-yellow-100 rounded-full mb-4">
                             <i class="fas fa-id-card text-yellow-600 text-2xl"></i>
