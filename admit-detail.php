@@ -166,6 +166,12 @@ include 'includes/header.php';
                         </div>
                     </div>
 
+                    <?php if (!empty(trim(strip_tags($admit['description'] ?? '')))): ?>
+                    <div class="prose max-w-none text-gray-800 leading-relaxed mb-8">
+                        <?= $admit['description'] ?>
+                    </div>
+                    <?php endif; ?>
+
                     <!-- Flexible Sections (Extras) placed right below action buttons -->
                     <?php if (!empty($extras)): ?>
                     <div class="mt-2 mb-8">
