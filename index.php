@@ -109,14 +109,14 @@ include 'includes/header.php';
 
             <div class="max-w-5xl mx-auto mt-8 md:mt-10">
                 <!-- Glass search card -->
-                <div class="rounded-2xl bg-white/15 backdrop-blur-xl p-4 md:p-6 shadow-2xl ring-1 ring-white/30">
-                    <div class="grid grid-cols-1 md:grid-cols-[220px_1fr_auto] gap-3 md:gap-4 items-stretch">
+                <div class="rounded-2xl bg-white/20 supports-[backdrop-filter]:backdrop-blur-xl p-4 md:p-6 shadow-2xl ring-1 ring-white/30">
+                    <div role="search" aria-label="Site search" class="grid grid-cols-1 md:grid-cols-[minmax(160px,220px)_1fr_auto] gap-2 sm:gap-3 md:gap-4 items-stretch">
                         <!-- Category Select (keep ID for JS) -->
                         <div>
                             <label for="search-category" class="sr-only">Category</label>
                             <div class="relative">
-                                <i class="fas fa-layer-group absolute left-3 top-1/2 -translate-y-1/2 text-white/80"></i>
-                                <select id="search-category" class="w-full pl-10 pr-10 py-3.5 md:py-3 rounded-xl bg-white/15 text-white placeholder-white/70 ring-1 ring-white/30 focus:outline-none focus:ring-2 focus:ring-white hover:bg-white/20">
+                                <i class="fas fa-layer-group absolute left-3 top-1/2 -translate-y-1/2 text-white/80 pointer-events-none"></i>
+                                <select id="search-category" class="w-full appearance-none pl-10 pr-10 py-3.5 md:py-3 rounded-xl bg-white/20 text-white placeholder-white/70 ring-1 ring-white/30 focus:outline-none focus:ring-2 focus:ring-white/70 hover:bg-white/30 min-h-[48px]">
                                     <option value="all" class="text-gray-800">All Categories</option>
                                     <option value="jobs" class="text-gray-800">Jobs</option>
                                     <option value="results" class="text-gray-800">Results</option>
@@ -141,12 +141,12 @@ include 'includes/header.php';
                             <label for="hero-search" class="sr-only">Search</label>
                             <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"></i>
                             <input type="text" id="hero-search" placeholder="Search jobs, results, admit cards, syllabus..." 
-                                   class="w-full pl-11 pr-4 py-3.5 md:py-3 rounded-xl text-gray-900 placeholder-gray-500 bg-white focus:outline-none focus:ring-2 focus:ring-primary">
+                                   class="w-full pl-11 pr-4 py-3.5 md:py-3 rounded-xl text-gray-900 placeholder-gray-500 bg-white focus:outline-none focus:ring-2 focus:ring-primary ring-1 ring-gray-200 shadow-inner min-h-[48px]" aria-label="Search input">
                         </div>
 
                         <!-- Search Button (keep ID for JS) -->
                         <div class="flex">
-                            <button id="hero-search-btn" class="flex-1 md:flex-none inline-flex items-center justify-center gap-2 bg-gradient-to-r from-secondary to-rose-600 hover:from-rose-600 hover:to-rose-700 px-6 md:px-8 py-3.5 md:py-3 rounded-xl font-semibold shadow-lg shadow-rose-900/20 transition-colors">
+                            <button id="hero-search-btn" class="w-full md:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-secondary to-rose-600 hover:from-rose-600 hover:to-rose-700 px-6 md:px-8 py-3.5 md:py-3 rounded-xl font-semibold shadow-lg shadow-rose-900/20 transition-colors min-h-[48px]" aria-label="Search">
                                 <i class="fas fa-magnifying-glass"></i>
                                 Search
                             </button>
@@ -154,10 +154,10 @@ include 'includes/header.php';
                     </div>
 
                     <!-- Quick chips -->
-                    <div class="mt-4 flex flex-wrap items-center gap-2 text-sm">
+                    <div class="mt-4 flex items-center gap-2 text-sm overflow-x-auto whitespace-nowrap [-webkit-overflow-scrolling:touch] -mx-2 px-2 sm:mx-0 sm:px-0">
                         <span class="text-white/80">Popular:</span>
                         <?php $chips = ['SSC', 'UPSC', 'Railway', 'Bank PO', 'Police', 'Teacher', 'Defence']; foreach ($chips as $chip): ?>
-                            <a class="px-3 py-1.5 rounded-full bg-white/20 text-white/90 hover:bg-white/30 transition" href="<?= SITE_URL ?>/search.php?q=<?= urlencode($chip) ?>&type=jobs">#<?= htmlspecialchars($chip) ?></a>
+                            <a class="px-3 py-1.5 rounded-full bg-white/20 text-white/90 hover:bg-white/30 transition shrink-0" href="<?= SITE_URL ?>/search.php?q=<?= urlencode($chip) ?>&type=jobs">#<?= htmlspecialchars($chip) ?></a>
                         <?php endforeach; ?>
                     </div>
                 </div>
