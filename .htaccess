@@ -1,6 +1,6 @@
 # Enable Apache rewrite engine
-RewriteEngine On
-RewriteBase /sarkari/
+#RewriteEngine On
+#RewriteBase /sarkari/
 
 # Serve existing files/directories directly
 RewriteCond %{REQUEST_FILENAME} -f [OR]
