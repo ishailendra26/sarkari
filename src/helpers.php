@@ -72,15 +72,39 @@ function formatDate($date, $format = 'd M Y') {
 }
 
 function timeAgo($datetime) {
-    $time = time() - strtotime($datetime);
-    
-    if ($time < 60) return 'just now';
-    if ($time < 3600) return floor($time/60) . ' minutes ago';
-    if ($time < 86400) return floor($time/3600) . ' hours ago';
-    if ($time < 2592000) return floor($time/86400) . ' days ago';
-    if ($time < 31536000) return floor($time/2592000) . ' months ago';
-    
-    return floor($time/31536000) . ' years ago';
+    // Handle empty or invalid date values gracefully
+    if (!$datetime) {
+        return 'just now';
+    }
+    $ts = @strtotime($datetime);
+    if ($ts === false) {
+        return 'just now';
+    }
+
+    $diff = time() - $ts; // seconds
+    // Clamp future timestamps to 'just now' to avoid "in X" wording
+    if ($diff <= 0) {
+        return 'just now';
+    }
+
+    $units = [
+        ['secs' => 31536000, 'singular' => 'year',   'plural' => 'years'],
+        ['secs' => 2592000,  'singular' => 'month',  'plural' => 'months'],
+        ['secs' => 86400,    'singular' => 'day',    'plural' => 'days'],
+        ['secs' => 3600,     'singular' => 'hour',   'plural' => 'hours'],
+        ['secs' => 60,       'singular' => 'minute', 'plural' => 'minutes'],
+    ];
+
+    foreach ($units as $u) {
+        if ($diff >= $u['secs']) {
+            $val = (int) floor($diff / $u['secs']);
+            $label = ($val === 1) ? $u['singular'] : $u['plural'];
+            return $val . ' ' . $label . ' ago';
+        }
+    }
+
+    // Less than a minute
+    return 'just now';
 }
 
 function sanitizeInput($input) {

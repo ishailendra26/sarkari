@@ -209,7 +209,7 @@ include 'includes/header.php';
                                 
                                 <div class="flex items-center">
                                     <i class="fas fa-clock w-4 mr-2 text-primary"></i>
-                                    <span>Posted <?= timeAgo($job['published_at']) ?></span>
+                                    <span>Posted <?= timeAgo($job['published_at'] ?: ($job['created_at'] ?? null)) ?></span>
                                 </div>
                             </div>
 
@@ -350,7 +350,7 @@ include 'includes/header.php';
                                     <?= htmlspecialchars($relatedJob['organization']) ?>
                                 </div>
                                 <div class="text-xs text-gray-500 mt-1">
-                                    <?= timeAgo($relatedJob['published_at']) ?>
+                                    <?= timeAgo($relatedJob['published_at'] ?: ($relatedJob['created_at'] ?? null)) ?>
                                 </div>
                             </div>
                             <?php endforeach; ?>

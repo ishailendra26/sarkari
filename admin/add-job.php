@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $thumbnail_url = sanitizeInput($_POST['thumbnail_url'] ?? '');
     $author_id = isset($_POST['author_id']) && $_POST['author_id'] !== '' ? (int)$_POST['author_id'] : null;
     
-    if ($title && $organization) {
+    if ($title && $organization && $category_id) {
         $slugBase = slugify($title);
         $slug = generateUniqueSlug('jobs', $slugBase);
         
@@ -47,38 +47,96 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'vacancy_count' => $vacancy_count,
             'educational_qualification' => $educational_qualification,
             'age_limit' => $age_limit,
-            'category_id' => $category_id ?: null,
+            'category_id' => $category_id,
             'content' => $content,
             'attachments' => null,
             'status' => $status,
             'thumbnail_url' => $thumbnail_url ?: null,
             'author_id' => $author_id
         ];
-        
+
+        // Validate Events input before creating Job
+        $events = [];
+        $hasValidationError = false;
+        $et = $_POST['events']['event_type'] ?? [];
+        $el = $_POST['events']['event_label'] ?? [];
+        $sd = $_POST['events']['start_date'] ?? [];
+        $ed = $_POST['events']['end_date'] ?? [];
+        $nt = $_POST['events']['notes'] ?? [];
+        $so = $_POST['events']['sort_order'] ?? [];
+        for ($i=0; $i<count($et); $i++) {
+            $etype = trim($et[$i] ?? '');
+            $label = trim($el[$i] ?? '');
+            $start = trim($sd[$i] ?? '');
+            $end = trim($ed[$i] ?? '');
+            $notes = trim($nt[$i] ?? '');
+            $sort = isset($so[$i]) && $so[$i] !== '' ? (int)$so[$i] : 0;
+
+            // Skip completely empty rows
+            if ($etype === '' && $start === '' && $label === '' && $end === '' && $notes === '') continue;
+
+            // Require at least Start Date or Label to avoid saving default type-only rows
+            if ($start === '' && $label === '') {
+                $error = 'Each event row must include at least a Start Date or a Label.';
+                $hasValidationError = true;
+                break;
+            }
+
+            // Validate dates if provided (YYYY-MM-DD)
+            if ($start !== '') {
+                $d = DateTime::createFromFormat('Y-m-d', $start);
+                if (!($d && $d->format('Y-m-d') === $start)) {
+                    $error = 'Invalid Start Date format in Events. Please use YYYY-MM-DD.';
+                    $hasValidationError = true;
+                    break;
+                }
+            }
+            if ($end !== '') {
+                $d2 = DateTime::createFromFormat('Y-m-d', $end);
+                if (!($d2 && $d2->format('Y-m-d') === $end)) {
+                    $error = 'Invalid End Date format in Events. Please use YYYY-MM-DD.';
+                    $hasValidationError = true;
+                    break;
+                }
+            }
+
+            $events[] = [
+                'event_type' => $etype !== '' ? $etype : 'other',
+                'event_label' => $label !== '' ? $label : null,
+                'start_date' => $start !== '' ? $start : null,
+                'end_date' => $end !== '' ? $end : null,
+                'notes' => $notes !== '' ? $notes : null,
+                'sort_order' => $sort,
+            ];
+        }
+
+        if ($hasValidationError) {
+            // Fall through and let form re-render with $error
+        } else {
         try {
             $jobId = $jobModel->create($data);
             if ($jobId) {
                 // Save flexible content blocks
                 // Events
-                $events = [];
-                $et = $_POST['events']['event_type'] ?? [];
-                $el = $_POST['events']['event_label'] ?? [];
-                $sd = $_POST['events']['start_date'] ?? [];
-                $ed = $_POST['events']['end_date'] ?? [];
-                $nt = $_POST['events']['notes'] ?? [];
-                $so = $_POST['events']['sort_order'] ?? [];
-                for ($i=0; $i<count($et); $i++) {
-                    if (!$et[$i] && !$sd[$i] && !$el[$i]) continue;
-                    $events[] = [
-                        'event_type' => $et[$i] ?: 'other',
-                        'event_label' => $el[$i] ?: null,
-                        'start_date' => $sd[$i] ?: null,
-                        'end_date' => $ed[$i] ?: null,
-                        'notes' => $nt[$i] ?: null,
-                        'sort_order' => isset($so[$i]) && $so[$i] !== '' ? (int)$so[$i] : 0,
-                    ];
+                if (!empty($events)) {
+                    // Deduplicate events by signature to prevent multiple identical rows
+                    $seen = [];
+                    $dedup = [];
+                    foreach ($events as $ev) {
+                        $sig = implode('|', [
+                            $ev['event_type'] ?? '',
+                            $ev['event_label'] ?? '',
+                            $ev['start_date'] ?? '',
+                            $ev['end_date'] ?? '',
+                            $ev['notes'] ?? '',
+                            (string)($ev['sort_order'] ?? '0'),
+                        ]);
+                        if (isset($seen[$sig])) continue;
+                        $seen[$sig] = true;
+                        $dedup[] = $ev;
+                    }
+                    if (!empty($dedup)) { $jobModel->saveEvents($jobId, $dedup); }
                 }
-                if (!empty($events)) { $jobModel->saveEvents($jobId, $events); }
 
                 // Links
                 $links = [];
@@ -179,8 +237,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (Throwable $e) {
             $error = 'Creation failed: ' . htmlspecialchars($e->getMessage());
         }
+        }
     } else {
-        $error = 'Please fill required fields';
+        $error = 'Please fill required fields (Title, Organization, and Category).';
     }
 }
 
@@ -241,8 +300,8 @@ include 'includes/header.php';
                         </div>
                         
                         <div>
-                            <label class="form-label">Category</label>
-                            <select name="category_id" class="form-input">
+                            <label class="form-label">Category *</label>
+                            <select name="category_id" class="form-input" required>
                                 <option value="">Select Category</option>
                                 <?php foreach ($categories as $category): ?>
                                 <option value="<?= $category['id'] ?>" <?= ($_POST['category_id'] ?? '') == $category['id'] ? 'selected' : '' ?>>
@@ -506,6 +565,71 @@ include 'includes/header.php';
                       const container = cb.closest('.inline-flex');
                       const hidden = container?.querySelector('input[type="hidden"][name^="faqs[is_active]"]');
                       if (hidden) hidden.value = cb.checked ? '1' : '0';
+                    }
+                  });
+                  // Events inline validation before submit
+                  const form = document.querySelector('form[data-validate]');
+                  function clearRowError(row){
+                    let err = row.querySelector('.ev_row_error');
+                    if (err) err.remove();
+                    row.classList.remove('ring-1','ring-red-400','bg-red-50');
+                  }
+                  function showRowError(row, msg){
+                    clearRowError(row);
+                    const span = document.createElement('div');
+                    span.className = 'ev_row_error text-sm text-red-600 col-span-6';
+                    span.textContent = msg;
+                    // If using grid, append after row within wrapper
+                    row.after(span);
+                    row.classList.add('ring-1','ring-red-400','bg-red-50');
+                  }
+                  function isValidDateStr(s){
+                    if (!s) return true; // empty handled elsewhere
+                    const m = /^\d{4}-\d{2}-\d{2}$/.test(s);
+                    if (!m) return false;
+                    const d = new Date(s + 'T00:00:00');
+                    // Check month/day overflow by comparing components
+                    const [Y,M,D] = s.split('-').map(Number);
+                    return d.getFullYear()===Y && (d.getMonth()+1)===M && d.getDate()===D;
+                  }
+                  form?.addEventListener('submit', function(e){
+                    let hasError = false;
+                    const wrap = document.getElementById('events_wrap');
+                    wrap?.querySelectorAll('.ev_row').forEach(row => {
+                      clearRowError(row);
+                      const typeSel = row.querySelector('select[name="events[event_type][]"]');
+                      const label = row.querySelector('input[name="events[event_label][]"]');
+                      const sd = row.querySelector('input[name="events[start_date][]"]');
+                      const ed = row.querySelector('input[name="events[end_date][]"]');
+                      const notes = row.querySelector('input[name="events[notes][]"]');
+                      const allEmpty = (!typeSel || !typeSel.value) && (!label || !label.value.trim()) && (!sd || !sd.value) && (!ed || !ed.value) && (!notes || !notes.value.trim());
+                      if (allEmpty) {
+                        // remove fully empty rows to avoid accidental default saves
+                        row.remove();
+                        return;
+                      }
+                      // Require at least start_date or label
+                      if ((!sd || !sd.value) && (!label || !label.value.trim())){
+                        showRowError(row, 'Please provide at least a Start Date or a Label for this event.');
+                        hasError = true;
+                        return;
+                      }
+                      // Validate date formats
+                      if (sd && sd.value && !isValidDateStr(sd.value)){
+                        showRowError(row, 'Start Date must be in YYYY-MM-DD format and be a valid date.');
+                        hasError = true;
+                        return;
+                      }
+                      if (ed && ed.value && !isValidDateStr(ed.value)){
+                        showRowError(row, 'End Date must be in YYYY-MM-DD format and be a valid date.');
+                        hasError = true;
+                        return;
+                      }
+                    });
+                    if (hasError) {
+                      e.preventDefault();
+                      const firstErr = document.querySelector('.ev_row_error');
+                      firstErr?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
                   });
                 })();
