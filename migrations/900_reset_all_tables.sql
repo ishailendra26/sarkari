@@ -11,6 +11,15 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- Junction/child tables first
 TRUNCATE TABLE post_tags;
 
+-- Flexible content tables
+TRUNCATE TABLE content_sections;
+TRUNCATE TABLE content_vacancies;
+TRUNCATE TABLE content_age_limits;
+TRUNCATE TABLE content_fees;
+TRUNCATE TABLE content_faqs;
+TRUNCATE TABLE content_links;
+TRUNCATE TABLE content_events;
+
 -- Content tables
 TRUNCATE TABLE posts;
 TRUNCATE TABLE tags;

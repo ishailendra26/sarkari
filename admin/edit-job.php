@@ -24,6 +24,15 @@ if (!$job) {
     redirect('jobs.php');
 }
 
+// Load existing flexible content for prefill
+$events = $jobModel->getEvents($id);
+$links = $jobModel->getLinks($id);
+$fees = $jobModel->getFees($id);
+$vacancies = $jobModel->getVacancies($id);
+$sections = $jobModel->getSections($id);
+$faqs = $jobModel->getFaqs($id);
+$age = $jobModel->getAgeLimit($id);
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title = sanitizeInput($_POST['title'] ?? '');
     $organization = sanitizeInput($_POST['organization'] ?? '');
@@ -38,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $status = sanitizeInput($_POST['status'] ?? 'draft');
     $thumbnail_url = sanitizeInput($_POST['thumbnail_url'] ?? '');
     $author_id = isset($_POST['author_id']) && $_POST['author_id'] !== '' ? (int)$_POST['author_id'] : null;
-
+    
     if ($title && $organization && $category_id) {
         $slugBase = slugify($title);
         $slug = generateUniqueSlug('jobs', $slugBase, $id);
@@ -60,188 +69,164 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'author_id' => $author_id
         ];
         
-        // Validate Events input before updating Job
-        $events = [];
-        $hasValidationError = false;
-        $et = $_POST['events']['event_type'] ?? [];
-        $el = $_POST['events']['event_label'] ?? [];
-        $sd = $_POST['events']['start_date'] ?? [];
-        $ed = $_POST['events']['end_date'] ?? [];
-        $nt = $_POST['events']['notes'] ?? [];
-        $so = $_POST['events']['sort_order'] ?? [];
-        for ($i=0; $i<count($et); $i++) {
-            $etype = trim($et[$i] ?? '');
-            $label = trim($el[$i] ?? '');
-            $start = trim($sd[$i] ?? '');
-            $end = trim($ed[$i] ?? '');
-            $notes = trim($nt[$i] ?? '');
-            $sort = isset($so[$i]) && $so[$i] !== '' ? (int)$so[$i] : 0;
-
-            // Skip completely empty rows
-            if ($etype === '' && $start === '' && $label === '' && $end === '' && $notes === '') continue;
-
-            // Require at least Start Date or Label to avoid saving default type-only rows
-            if ($start === '' && $label === '') {
-                $error = 'Each event row must include at least a Start Date or a Label.';
-                $hasValidationError = true;
-                break;
-            }
-
-            // Validate dates if provided (YYYY-MM-DD)
-            if ($start !== '') {
-                $d = DateTime::createFromFormat('Y-m-d', $start);
-                if (!($d && $d->format('Y-m-d') === $start)) {
-                    $error = 'Invalid Start Date format in Events. Please use YYYY-MM-DD.';
-                    $hasValidationError = true;
-                    break;
-                }
-            }
-            if ($end !== '') {
-                $d2 = DateTime::createFromFormat('Y-m-d', $end);
-                if (!($d2 && $d2->format('Y-m-d') === $end)) {
-                    $error = 'Invalid End Date format in Events. Please use YYYY-MM-DD.';
-                    $hasValidationError = true;
-                    break;
-                }
-            }
-
-            $events[] = [
-                'event_type' => $etype !== '' ? $etype : 'other',
-                'event_label' => $label !== '' ? $label : null,
-                'start_date' => $start !== '' ? $start : null,
-                'end_date' => $end !== '' ? $end : null,
-                'notes' => $notes !== '' ? $notes : null,
-                'sort_order' => $sort,
-            ];
-        }
-
-        if ($hasValidationError) {
-            // Do not update if events validation fails
-        } else {
         try {
             $jobModel->update($id, $data);
 
             // Save flexible content blocks
             // Events
-            if (!empty($events)) {
-                $seen = [];
-                $dedup = [];
-                foreach ($events as $ev) {
-                    $sig = implode('|', [
-                        $ev['event_type'] ?? '',
-                        $ev['event_label'] ?? '',
-                        $ev['start_date'] ?? '',
-                        $ev['end_date'] ?? '',
-                        $ev['notes'] ?? '',
-                        (string)($ev['sort_order'] ?? '0'),
-                    ]);
-                    if (isset($seen[$sig])) continue;
-                    $seen[$sig] = true;
-                    $dedup[] = $ev;
+            $events = [];
+            if (isset($_POST['events']) && is_array($_POST['events'])) {
+                $eventCount = count($_POST['events']['event_type'] ?? []);
+                for ($i = 0; $i < $eventCount; $i++) {
+                    // Skip if all fields are empty
+                    if (empty(trim($_POST['events']['event_type'][$i] ?? '')) && 
+                        empty(trim($_POST['events']['event_label'][$i] ?? '')) && 
+                        empty(trim($_POST['events']['start_date'][$i] ?? '')) && 
+                        empty(trim($_POST['events']['end_date'][$i] ?? '')) && 
+                        empty(trim($_POST['events']['notes'][$i] ?? ''))) {
+                        continue;
+                    }
+                    
+                    $events[] = [
+                        'event_type' => $_POST['events']['event_type'][$i] ?? 'application_start',
+                        'event_label' => !empty($_POST['events']['event_label'][$i]) ? $_POST['events']['event_label'][$i] : null,
+                        'start_date' => !empty($_POST['events']['start_date'][$i]) ? $_POST['events']['start_date'][$i] : null,
+                        'end_date' => !empty($_POST['events']['end_date'][$i]) ? $_POST['events']['end_date'][$i] : null,
+                        'notes' => !empty($_POST['events']['notes'][$i]) ? $_POST['events']['notes'][$i] : null,
+                        'sort_order' => isset($_POST['events']['sort_order'][$i]) && $_POST['events']['sort_order'][$i] !== '' ? (int)$_POST['events']['sort_order'][$i] : 0,
+                    ];
                 }
-                $jobModel->saveEvents($id, $dedup);
-            } else {
-                $jobModel->saveEvents($id, []);
             }
+            $jobModel->saveEvents($id, $events);
 
             // Links
             $links = [];
-            $ll = $_POST['links']['label'] ?? [];
-            $lu = $_POST['links']['url'] ?? [];
-            $ls = $_POST['links']['sort_order'] ?? [];
-            for ($i=0; $i<count($ll); $i++) {
-                if (($ll[$i] ?? '') === '' && ($lu[$i] ?? '') === '') continue;
-                $links[] = [
-                    'label' => $ll[$i] ?: '',
-                    'url' => $lu[$i] ?: '',
-                    'sort_order' => isset($ls[$i]) && $ls[$i] !== '' ? (int)$ls[$i] : 0,
-                ];
+            if (isset($_POST['links']) && is_array($_POST['links'])) {
+                $linkCount = count($_POST['links']['label'] ?? []);
+                for ($i = 0; $i < $linkCount; $i++) {
+                    // Skip if both label and URL are empty
+                    if (empty(trim($_POST['links']['label'][$i] ?? '')) && 
+                        empty(trim($_POST['links']['url'][$i] ?? ''))) {
+                        continue;
+                    }
+                    
+                    $links[] = [
+                        'label' => $_POST['links']['label'][$i] ?? '',
+                        'url' => $_POST['links']['url'][$i] ?? '',
+                        'sort_order' => isset($_POST['links']['sort_order'][$i]) && $_POST['links']['sort_order'][$i] !== '' ? (int)$_POST['links']['sort_order'][$i] : 0,
+                    ];
+                }
             }
             $jobModel->saveLinks($id, $links);
 
             // Fees
             $fees = [];
-            $fc = $_POST['fees']['category'] ?? [];
-            $fa = $_POST['fees']['amount'] ?? [];
-            $ft = $_POST['fees']['text'] ?? [];
-            $fm = $_POST['fees']['mode_notes'] ?? [];
-            $fs = $_POST['fees']['sort_order'] ?? [];
-            for ($i=0; $i<count($fc); $i++) {
-                if (($fc[$i] ?? '') === '') continue;
-                $fees[] = [
-                    'category' => $fc[$i] ?: '',
-                    'amount' => ($fa[$i] === '' ? null : $fa[$i]),
-                    'text' => $ft[$i] ?: null,
-                    'mode_notes' => $fm[$i] ?: null,
-                    'sort_order' => isset($fs[$i]) && $fs[$i] !== '' ? (int)$fs[$i] : 0,
-                ];
+            if (isset($_POST['fees']) && is_array($_POST['fees'])) {
+                $feeCount = count($_POST['fees']['category'] ?? []);
+                for ($i = 0; $i < $feeCount; $i++) {
+                    // Skip if category is empty
+                    if (empty(trim($_POST['fees']['category'][$i] ?? ''))) {
+                        continue;
+                    }
+                    
+                    $fees[] = [
+                        'category' => $_POST['fees']['category'][$i] ?? '',
+                        'amount' => isset($_POST['fees']['amount'][$i]) && $_POST['fees']['amount'][$i] !== '' ? $_POST['fees']['amount'][$i] : null,
+                        'text' => !empty($_POST['fees']['text'][$i]) ? $_POST['fees']['text'][$i] : null,
+                        'mode_notes' => !empty($_POST['fees']['mode_notes'][$i]) ? $_POST['fees']['mode_notes'][$i] : null,
+                        'sort_order' => isset($_POST['fees']['sort_order'][$i]) && $_POST['fees']['sort_order'][$i] !== '' ? (int)$_POST['fees']['sort_order'][$i] : 0,
+                    ];
+                }
             }
             $jobModel->saveFees($id, $fees);
 
-            // Age limit (single)
-            if (isset($_POST['age_block'])) {
-                $jobModel->saveAgeLimit($id, [
-                    'min_age' => $_POST['age_block']['min_age'] ?? null,
-                    'max_age' => $_POST['age_block']['max_age'] ?? null,
-                    'cutoff_date' => $_POST['age_block']['cutoff_date'] ?? null,
-                    'relaxation_text' => $_POST['age_block']['relaxation_text'] ?? null,
-                ]);
-            }
-
             // Vacancies
             $vac = [];
-            $vpn = $_POST['vacancies']['post_name'] ?? [];
-            $vct = $_POST['vacancies']['category'] ?? [];
-            $vtp = $_POST['vacancies']['total_posts'] ?? [];
-            $vel = $_POST['vacancies']['eligibility_text'] ?? [];
-            $vps = $_POST['vacancies']['pay_scale'] ?? [];
-            $vso = $_POST['vacancies']['sort_order'] ?? [];
-            for ($i=0; $i<count($vpn); $i++) {
-                if (($vpn[$i] ?? '') === '') continue;
-                $vac[] = [
-                    'post_name' => $vpn[$i],
-                    'category' => $vct[$i] ?: null,
-                    'total_posts' => ($vtp[$i] === '' ? null : (int)$vtp[$i]),
-                    'eligibility_text' => $vel[$i] ?: null,
-                    'pay_scale' => $vps[$i] ?: null,
-                    'sort_order' => isset($vso[$i]) && $vso[$i] !== '' ? (int)$vso[$i] : 0,
-                ];
+            if (isset($_POST['vacancies']) && is_array($_POST['vacancies'])) {
+                $vacCount = count($_POST['vacancies']['post_name'] ?? []);
+                for ($i = 0; $i < $vacCount; $i++) {
+                    // Skip if post_name is empty
+                    if (empty(trim($_POST['vacancies']['post_name'][$i] ?? ''))) {
+                        continue;
+                    }
+                    
+                    $vac[] = [
+                        'post_name' => $_POST['vacancies']['post_name'][$i],
+                        'category' => !empty($_POST['vacancies']['category'][$i]) ? $_POST['vacancies']['category'][$i] : null,
+                        'total_posts' => isset($_POST['vacancies']['total_posts'][$i]) && $_POST['vacancies']['total_posts'][$i] !== '' ? (int)$_POST['vacancies']['total_posts'][$i] : null,
+                        'eligibility_text' => !empty($_POST['vacancies']['eligibility_text'][$i]) ? $_POST['vacancies']['eligibility_text'][$i] : null,
+                        'pay_scale' => !empty($_POST['vacancies']['pay_scale'][$i]) ? $_POST['vacancies']['pay_scale'][$i] : null,
+                        'sort_order' => isset($_POST['vacancies']['sort_order'][$i]) && $_POST['vacancies']['sort_order'][$i] !== '' ? (int)$_POST['vacancies']['sort_order'][$i] : 0,
+                    ];
+                }
             }
             $jobModel->saveVacancies($id, $vac);
 
             // Sections (how_to_apply, mode_of_exam)
             $sections = [];
             if (!empty($_POST['sections']['how_to_apply'])) {
-                $sections[] = ['section_type' => 'how_to_apply', 'title' => 'How to Apply', 'content' => $_POST['sections']['how_to_apply'], 'sort_order' => 0];
+                $sections[] = [
+                    'section_type' => 'how_to_apply', 
+                    'title' => 'How to Apply', 
+                    'content' => $_POST['sections']['how_to_apply'], 
+                    'sort_order' => 0
+                ];
             }
             if (!empty($_POST['sections']['mode_of_exam'])) {
-                $sections[] = ['section_type' => 'mode_of_exam', 'title' => 'Mode of Exam', 'content' => $_POST['sections']['mode_of_exam'], 'sort_order' => 1];
+                $sections[] = [
+                    'section_type' => 'mode_of_exam', 
+                    'title' => 'Mode of Exam', 
+                    'content' => $_POST['sections']['mode_of_exam'], 
+                    'sort_order' => 1
+                ];
             }
             $jobModel->saveSections($id, $sections);
 
             // FAQs
-            $faqq = $_POST['faqs']['question'] ?? [];
-            $faqa = $_POST['faqs']['answer'] ?? [];
-            $faqo = $_POST['faqs']['sort_order'] ?? [];
-            $faqi = $_POST['faqs']['is_active'] ?? [];
             $faqs = [];
-            for ($i=0; $i<count($faqq); $i++) {
-                if (($faqq[$i] ?? '') === '' && ($faqa[$i] ?? '') === '') continue;
-                $faqs[] = [
-                    'question' => $faqq[$i] ?: '',
-                    'answer' => $faqa[$i] ?: '',
-                    'sort_order' => isset($faqo[$i]) && $faqo[$i] !== '' ? (int)$faqo[$i] : 0,
-                    'is_active' => isset($faqi[$i]) ? 1 : 0,
-                ];
+            if (isset($_POST['faqs']) && is_array($_POST['faqs'])) {
+                $faqCount = count($_POST['faqs']['question'] ?? []);
+                for ($i = 0; $i < $faqCount; $i++) {
+                    // Skip if both question and answer are empty
+                    if (empty(trim($_POST['faqs']['question'][$i] ?? '')) && 
+                        empty(trim($_POST['faqs']['answer'][$i] ?? ''))) {
+                        continue;
+                    }
+                    
+                    $faqs[] = [
+                        'question' => $_POST['faqs']['question'][$i] ?? '',
+                        'answer' => $_POST['faqs']['answer'][$i] ?? '',
+                        'sort_order' => isset($_POST['faqs']['sort_order'][$i]) && $_POST['faqs']['sort_order'][$i] !== '' ? (int)$_POST['faqs']['sort_order'][$i] : 0,
+                        'is_active' => isset($_POST['faqs']['is_active'][$i]) ? 1 : 0,
+                    ];
+                }
             }
             $jobModel->saveFaqs($id, $faqs);
+
+            // Age Limit (single row)
+            if (isset($_POST['age_block'])) {
+                $ageData = [
+                    'min_age' => isset($_POST['age_block']['min_age']) && $_POST['age_block']['min_age'] !== '' ? (int)$_POST['age_block']['min_age'] : null,
+                    'max_age' => isset($_POST['age_block']['max_age']) && $_POST['age_block']['max_age'] !== '' ? (int)$_POST['age_block']['max_age'] : null,
+                    'cutoff_date' => !empty($_POST['age_block']['cutoff_date']) ? $_POST['age_block']['cutoff_date'] : null,
+                    'relaxation_text' => !empty($_POST['age_block']['relaxation_text']) ? $_POST['age_block']['relaxation_text'] : null,
+                ];
+                $jobModel->saveAgeLimit($id, $ageData);
+            }
 
             $success = 'Job updated successfully!';
             // Refresh job data
             $job = $jobModel->getById($id);
+            // Refresh flexible content
+            $events = $jobModel->getEvents($id);
+            $links = $jobModel->getLinks($id);
+            $fees = $jobModel->getFees($id);
+            $vacancies = $jobModel->getVacancies($id);
+            $sections = $jobModel->getSections($id);
+            $faqs = $jobModel->getFaqs($id);
+            $age = $jobModel->getAgeLimit($id);
         } catch (Throwable $e) {
             $error = 'Update failed: ' . htmlspecialchars($e->getMessage());
-        }
         }
     } else {
         $error = 'Please fill all required fields';
@@ -250,15 +235,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $categories = $categoryModel->getAll();
 $authors = $authorModel->getAll(1000, 0);
-
-// Load existing flexible content for prefill
-$events = $jobModel->getEvents($id);
-$links = $jobModel->getLinks($id);
-$fees = $jobModel->getFees($id);
-$age = $jobModel->getAgeLimit($id);
-$vacancies = $jobModel->getVacancies($id);
-$sections = $jobModel->getSections($id);
-$faqs = $jobModel->getFaqs($id);
 
 $pageTitle = 'Edit Job';
 include 'includes/header.php';
@@ -374,17 +350,16 @@ include 'includes/header.php';
                         <div class="md:col-span-2">
                             <label class="form-label">Job Description</label>
                             <textarea id="content" name="content" rows="10" class="form-input richtext" 
-                                      placeholder="Enter detailed job description...">
-<?= htmlspecialchars($job['content']) ?></textarea>
+                                      placeholder="Enter detailed job description..."><?= htmlspecialchars($job['content']) ?></textarea>
                         </div>
                         
                         <div>
                             <label class="form-label">Status</label>
                             <select name="status" class="form-input">
                                 <option value="published" <?= $job['status'] === 'published' ? 'selected' : '' ?>>Published</option>
+                                <option value="draft" <?= $job['status'] === 'draft' ? 'selected' : '' ?>>Draft</option>
                             </select>
                         </div>
-                    </div>
                     </div>
 
                     <!-- Events Repeater -->
@@ -569,10 +544,7 @@ include 'includes/header.php';
                           <input type="text" name="faqs[question][]" class="form-input" placeholder="Question" value="<?= htmlspecialchars($f['question'] ?? '') ?>">
                           <input type="text" name="faqs[answer][]" class="form-input" placeholder="Answer" value="<?= htmlspecialchars($f['answer'] ?? '') ?>">
                           <input type="number" name="faqs[sort_order][]" class="form-input" placeholder="#" value="<?= (int)($f['sort_order'] ?? 0) ?>">
-                          <div class="inline-flex items-center gap-2">
-                            <input type="hidden" name="faqs[is_active][]" value="<?= ((int)($f['is_active'] ?? 1)) ? '1' : '0' ?>">
-                            <input type="checkbox" class="faq_active_cb" <?= ((int)($f['is_active'] ?? 1)) ? 'checked' : '' ?>> <span>Active</span>
-                          </div>
+                          <label class="inline-flex items-center gap-2"><input type="checkbox" name="faqs[is_active][]" <?= ((int)($f['is_active'] ?? 1)) ? 'checked' : '' ?>> Active</label>
                           <div></div>
                         </div>
                         <?php endforeach; else: ?>
@@ -580,10 +552,7 @@ include 'includes/header.php';
                           <input type="text" name="faqs[question][]" class="form-input" placeholder="Question">
                           <input type="text" name="faqs[answer][]" class="form-input" placeholder="Answer">
                           <input type="number" name="faqs[sort_order][]" class="form-input" placeholder="#" value="0">
-                          <div class="inline-flex items-center gap-2">
-                            <input type="hidden" name="faqs[is_active][]" value="1">
-                            <input type="checkbox" class="faq_active_cb" checked> <span>Active</span>
-                          </div>
+                          <label class="inline-flex items-center gap-2"><input type="checkbox" name="faqs[is_active][]" checked> Active</label>
                           <div></div>
                         </div>
                         <?php endif; ?>
@@ -642,15 +611,7 @@ include 'includes/header.php';
                     const first = wrap.querySelector('.' + rowClass);
                     if (!first) return;
                     const node = first.cloneNode(true);
-                    node.querySelectorAll('input').forEach(i=>{
-                      if(i.type==='checkbox'){
-                        i.checked = true;
-                      } else if (i.type==='hidden' && i.name && i.name.indexOf('faqs[is_active]') === 0) {
-                        i.value = '1';
-                      } else {
-                        i.value='';
-                      }
-                    });
+                    node.querySelectorAll('input').forEach(i=>{ if(i.type==='checkbox'){ i.checked=true; } else { i.value=''; }});
                     node.querySelectorAll('select').forEach(s=>{ s.selectedIndex = 0; });
                     wrap.appendChild(node);
                   }
@@ -659,85 +620,6 @@ include 'includes/header.php';
                   document.getElementById('add_fee')?.addEventListener('click', ()=> cloneRow('fees_wrap','fee_row'));
                   document.getElementById('add_vac')?.addEventListener('click', ()=> cloneRow('vacancies_wrap','vac_row'));
                   document.getElementById('add_faq')?.addEventListener('click', ()=> cloneRow('faqs_wrap','faq_row'));
-                  document.addEventListener('change', function(e){
-                    const cb = e.target;
-                    if (cb && cb.classList && cb.classList.contains('faq_active_cb')){
-                      const container = cb.closest('.inline-flex');
-                      const hidden = container?.querySelector('input[type="hidden"][name^="faqs[is_active]"]');
-                      if (hidden) hidden.value = cb.checked ? '1' : '0';
-                    }
-                  });
-
-                  // Sync FAQ checkbox to hidden value
-                  document.addEventListener('change', function(e){
-                    const cb = e.target;
-                    if (cb && cb.classList && cb.classList.contains('faq_active_cb')){
-                      const container = cb.closest('.inline-flex');
-                      const hidden = container?.querySelector('input[type="hidden"][name^="faqs[is_active]"]');
-                      if (hidden) hidden.value = cb.checked ? '1' : '0';
-                    }
-                  });
-
-                  // Events inline validation before submit
-                  const form = document.querySelector('form[data-validate]');
-                  function clearRowError(row){
-                    let err = row.querySelector('.ev_row_error');
-                    if (err) err.remove();
-                    row.classList.remove('ring-1','ring-red-400','bg-red-50');
-                  }
-                  function showRowError(row, msg){
-                    clearRowError(row);
-                    const span = document.createElement('div');
-                    span.className = 'ev_row_error text-sm text-red-600 col-span-6';
-                    span.textContent = msg;
-                    row.after(span);
-                    row.classList.add('ring-1','ring-red-400','bg-red-50');
-                  }
-                  function isValidDateStr(s){
-                    if (!s) return true;
-                    const m = /^\d{4}-\d{2}-\d{2}$/.test(s);
-                    if (!m) return false;
-                    const d = new Date(s + 'T00:00:00');
-                    const [Y,M,D] = s.split('-').map(Number);
-                    return d.getFullYear()===Y && (d.getMonth()+1)===M && d.getDate()===D;
-                  }
-                  form?.addEventListener('submit', function(e){
-                    let hasError = false;
-                    const wrap = document.getElementById('events_wrap');
-                    wrap?.querySelectorAll('.ev_row').forEach(row => {
-                      clearRowError(row);
-                      const typeSel = row.querySelector('select[name="events[event_type][]"]');
-                      const label = row.querySelector('input[name="events[event_label][]"]');
-                      const sd = row.querySelector('input[name="events[start_date][]"]');
-                      const ed = row.querySelector('input[name="events[end_date][]"]');
-                      const notes = row.querySelector('input[name="events[notes][]"]');
-                      const allEmpty = (!typeSel || !typeSel.value) && (!label || !label.value.trim()) && (!sd || !sd.value) && (!ed || !ed.value) && (!notes || !notes.value.trim());
-                      if (allEmpty) {
-                        row.remove();
-                        return;
-                      }
-                      if ((!sd || !sd.value) && (!label || !label.value.trim())){
-                        showRowError(row, 'Please provide at least a Start Date or a Label for this event.');
-                        hasError = true;
-                        return;
-                      }
-                      if (sd && sd.value && !isValidDateStr(sd.value)){
-                        showRowError(row, 'Start Date must be in YYYY-MM-DD format and be a valid date.');
-                        hasError = true;
-                        return;
-                      }
-                      if (ed && ed.value && !isValidDateStr(ed.value)){
-                        showRowError(row, 'End Date must be in YYYY-MM-DD format and be a valid date.');
-                        hasError = true;
-                        return;
-                      }
-                    });
-                    if (hasError) {
-                      e.preventDefault();
-                      const firstErr = document.querySelector('.ev_row_error');
-                      firstErr?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                  });
                 })();
                 </script>
             </div>

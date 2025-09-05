@@ -169,10 +169,10 @@ include 'includes/header.php';
                         </div>
                         
                         <div class="flex flex-wrap justify-center gap-4 text-sm text-gray-600 mb-6">
-                            <?php if ($result['exam_date']): ?>
+                            <?php if ($result['result_date']): ?>
                             <div class="flex items-center">
                                 <i class="fas fa-calendar mr-2 text-accent"></i>
-                                Exam Date: <?= formatDate($result['exam_date']) ?>
+                                Result Date: <?= formatDate($result['result_date']) ?>
                             </div>
                             <?php endif; ?>
                             

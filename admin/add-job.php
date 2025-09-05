@@ -75,9 +75,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Skip completely empty rows
             if ($etype === '' && $start === '' && $label === '' && $end === '' && $notes === '') continue;
 
-            // Require at least Start Date or Label to avoid saving default type-only rows
-            if ($start === '' && $label === '') {
-                $error = 'Each event row must include at least a Start Date or a Label.';
+            // Require at least Start Date or End Date or Label to avoid saving default type-only rows
+            if ($start === '' && $end === '' && $label === '') {
+                $error = 'Each event row must include at least a Start Date, End Date, or a Label.';
                 $hasValidationError = true;
                 break;
             }
@@ -608,9 +608,9 @@ include 'includes/header.php';
                         row.remove();
                         return;
                       }
-                      // Require at least start_date or label
-                      if ((!sd || !sd.value) && (!label || !label.value.trim())){
-                        showRowError(row, 'Please provide at least a Start Date or a Label for this event.');
+                      // Require at least start_date or end_date or label
+                      if (((!sd || !sd.value)) && ((!ed || !ed.value)) && ((!label || !label.value.trim()))){
+                        showRowError(row, 'Please provide at least a Start Date, End Date, or a Label for this event.');
                         hasError = true;
                         return;
                       }
