@@ -4,6 +4,7 @@ require_once '../src/db.php';
 require_once '../src/helpers.php';
 require_once '../src/models/Job.php';
 require_once '../src/models/Author.php';
+require_once '../src/notifications.php';
 
 requireLogin();
 
@@ -30,6 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $category_id = (int)($_POST['category_id'] ?? 0);
     $content = $_POST['content'] ?? '';
     $status = $_POST['status'] ?? 'published';
+    $send_push = isset($_POST['send_push']);
     $thumbnail_url = sanitizeInput($_POST['thumbnail_url'] ?? '');
     $author_id = isset($_POST['author_id']) && $_POST['author_id'] !== '' ? (int)$_POST['author_id'] : null;
     
@@ -231,6 +233,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (!empty($faqs)) { $jobModel->saveFaqs($jobId, $faqs); }
 
                 $success = 'Job created successfully!';
+                if ($send_push && $status === 'published') {
+                    $jobForNotif = [
+                        'title' => $title,
+                        'slug' => $slug,
+                        'organization' => $organization,
+                        'thumbnail_url' => $thumbnail_url ?: null
+                    ];
+                    try { onesignal_notify_job($jobForNotif); } catch (Exception $e) { /* ignore */ }
+                }
             } else {
                 $error = 'Failed to create job';
             }
@@ -351,6 +362,12 @@ include 'includes/header.php';
                                 <option value="published" <?= ($_POST['status'] ?? 'published') === 'published' ? 'selected' : '' ?>>Published</option>
                                 <option value="draft" <?= ($_POST['status'] ?? '') === 'draft' ? 'selected' : '' ?>>Draft</option>
                             </select>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="inline-flex items-center gap-2">
+                                <input type="checkbox" name="send_push" <?= (($_POST['send_push'] ?? '1')==='1') ? 'checked' : 'checked' ?>>
+                                <span>Send Push Notification (on Published)</span>
+                            </label>
                         </div>
                         
                         <div class="md:col-span-2">

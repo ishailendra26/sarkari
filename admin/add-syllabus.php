@@ -4,6 +4,7 @@ require_once '../src/db.php';
 require_once '../src/helpers.php';
 require_once '../src/models/Syllabus.php';
 require_once '../src/models/Author.php';
+require_once '../src/notifications.php';
 
 requireLogin();
 
@@ -21,6 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $download_url = sanitizeInput($_POST['download_url'] ?? '');
     $sections = $_POST['sections'] ?? '';
     $status = sanitizeInput($_POST['status'] ?? 'draft');
+    $send_push = isset($_POST['send_push']);
     $thumbnail_url = sanitizeInput($_POST['thumbnail_url'] ?? '');
     $author_id = isset($_POST['author_id']) && $_POST['author_id'] !== '' ? (int)$_POST['author_id'] : null;
     
@@ -43,6 +45,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $syllabusModel->create($data);
         $success = 'Syllabus added successfully!';
+        if ($send_push && $status === 'published') {
+            $syllForNotif = [
+                'title' => $title,
+                'slug' => $slug,
+                'organization' => $organization,
+                'thumbnail_url' => $thumbnail_url ?: null,
+            ];
+            try { onesignal_notify_syllabus($syllForNotif); } catch (Exception $e) { /* ignore */ }
+        }
         
         // Clear form
         $_POST = [];
@@ -148,6 +159,12 @@ include 'includes/header.php';
                                 <option value="draft" <?= ($_POST['status'] ?? '') === 'draft' ? 'selected' : '' ?>>Draft</option>
                                 <option value="published" <?= ($_POST['status'] ?? '') === 'published' ? 'selected' : '' ?>>Published</option>
                             </select>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="inline-flex items-center gap-2">
+                                <input type="checkbox" name="send_push" <?= (($_POST['send_push'] ?? '1')==='1') ? 'checked' : 'checked' ?>>
+                                <span>Send Push Notification (on Published)</span>
+                            </label>
                         </div>
                     </div>
                     

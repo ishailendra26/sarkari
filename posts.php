@@ -154,6 +154,37 @@ include 'includes/header.php';
                 </div>
             </div>
 
+            <?php // ItemList JSON-LD for posts ?>
+            <?php if (!empty($posts)): ?>
+            <?php 
+                $items = [];
+                $pos = 1;
+                foreach ($posts as $p) {
+                    $items[] = [
+                        '@type' => 'ListItem',
+                        'position' => $pos++,
+                        'url' => rtrim(SITE_URL, '/') . '/post/' . urlencode($p['slug']),
+                        'name' => $p['title']
+                    ];
+                }
+                $itemList = [
+                    '@context' => 'https://schema.org',
+                    '@type' => 'ItemList',
+                    'name' => $pageTitle,
+                    'itemListElement' => $items
+                ];
+            ?>
+            <script type="application/ld+json">
+                <?= json_encode($itemList, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) ?>
+            </script>
+            <?php endif; ?>
+
+            <?php 
+            // SEO Article section for Posts page (appears after listing cards)
+            $seoPageType = 'posts';
+            include __DIR__ . '/includes/seo-article.php';
+            ?>
+
             <!-- Pagination -->
             <?php if ($pagination['total_pages'] > 1): ?>
             <div class="pagination mt-8">

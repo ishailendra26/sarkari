@@ -28,6 +28,7 @@
                         <li><a href="<?= SITE_URL ?>/results" class="text-gray-400 hover:text-white">Results</a></li>
                         <li><a href="<?= SITE_URL ?>/admit" class="text-gray-400 hover:text-white">Admit Cards</a></li>
                         <li><a href="<?= SITE_URL ?>/syllabus" class="text-gray-400 hover:text-white">Syllabus</a></li>
+                        <li><a href="<?= SITE_URL ?>/sitemap.xml.php" class="text-gray-400 hover:text-white">Sitemap</a></li>
                     </ul>
                 </div>
                 

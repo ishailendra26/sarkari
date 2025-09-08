@@ -4,6 +4,7 @@ require_once '../src/db.php';
 require_once '../src/helpers.php';
 require_once '../src/models/Result.php';
 require_once '../src/models/Author.php';
+require_once '../src/notifications.php';
 
 requireLogin();
 
@@ -22,6 +23,8 @@ $result = $resultModel->getById($id);
 if (!$result) {
     redirect('results.php');
 }
+// Remember previous status for notification
+$__prev_status = $result['status'] ?? null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title = sanitizeInput($_POST['title'] ?? '');
@@ -30,6 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $result_date = sanitizeInput($_POST['result_date'] ?? '');
     $download_url = sanitizeInput($_POST['download_url'] ?? '');
     $status = sanitizeInput($_POST['status'] ?? 'draft');
+    $send_push = isset($_POST['send_push']);
     $thumbnail_url = sanitizeInput($_POST['thumbnail_url'] ?? '');
     $author_id = isset($_POST['author_id']) && $_POST['author_id'] !== '' ? (int)$_POST['author_id'] : null;
     
@@ -134,6 +138,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Refresh result data
             $result = $resultModel->getById($id);
+            // Notify if transitioned to published
+            if ($send_push && $__prev_status !== 'published' && $status === 'published') {
+                $resultForNotif = [
+                    'title' => $result['title'] ?? $title,
+                    'slug' => $result['slug'] ?? '',
+                    'organization' => $result['organization'] ?? '',
+                    'thumbnail_url' => $result['thumbnail_url'] ?? null,
+                ];
+                try { onesignal_notify_result($resultForNotif); } catch (Exception $e) { /* ignore */ }
+            }
         } catch (Throwable $e) {
             $msg = $e->getMessage();
             $friendly = '';
@@ -369,6 +383,12 @@ include 'includes/header.php';
                                 <option value="draft" <?= $result['status'] === 'draft' ? 'selected' : '' ?>>Draft</option>
                                 <option value="published" <?= $result['status'] === 'published' ? 'selected' : '' ?>>Published</option>
                             </select>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="inline-flex items-center gap-2">
+                                <input type="checkbox" name="send_push" <?= isset($_POST['send_push']) ? 'checked' : '' ?>>
+                                <span>Send Push Notification (on Publish)</span>
+                            </label>
                         </div>
                     </div>
                     

@@ -211,6 +211,37 @@ include 'includes/header.php';
                 </div>
             </div>
 
+            <?php // ItemList JSON-LD for jobs ?>
+            <?php if (!empty($jobs)): ?>
+            <?php 
+                $items = [];
+                $pos = 1;
+                foreach ($jobs as $j) {
+                    $items[] = [
+                        '@type' => 'ListItem',
+                        'position' => $pos++,
+                        'url' => rtrim(SITE_URL, '/') . '/job/' . urlencode($j['slug']),
+                        'name' => $j['title']
+                    ];
+                }
+                $itemList = [
+                    '@context' => 'https://schema.org',
+                    '@type' => 'ItemList',
+                    'name' => $pageTitle,
+                    'itemListElement' => $items
+                ];
+            ?>
+            <script type="application/ld+json">
+                <?= json_encode($itemList, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) ?>
+            </script>
+            <?php endif; ?>
+
+            <?php 
+            // SEO Article section for Jobs page (appears after listing cards)
+            $seoPageType = 'jobs';
+            include __DIR__ . '/includes/seo-article.php';
+            ?>
+
             <!-- Pagination -->
             <?php if ($pagination['total_pages'] > 1): ?>
             <div class="pagination">

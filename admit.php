@@ -139,6 +139,31 @@ include 'includes/header.php';
                 <?php endforeach; ?>
             </div>
 
+            <?php // ItemList JSON-LD for admit cards ?>
+            <?php if (!empty($admits)): ?>
+            <?php 
+                $items = [];
+                $pos = 1;
+                foreach ($admits as $a) {
+                    $items[] = [
+                        '@type' => 'ListItem',
+                        'position' => $pos++,
+                        'url' => rtrim(SITE_URL, '/') . '/admit/' . urlencode($a['slug']),
+                        'name' => $a['title']
+                    ];
+                }
+                $itemList = [
+                    '@context' => 'https://schema.org',
+                    '@type' => 'ItemList',
+                    'name' => $pageTitle,
+                    'itemListElement' => $items
+                ];
+            ?>
+            <script type="application/ld+json">
+                <?= json_encode($itemList, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) ?>
+            </script>
+            <?php endif; ?>
+
             <!-- Pagination -->
             <?php if ($pagination['total_pages'] > 1): ?>
             <div class="pagination">
@@ -164,6 +189,12 @@ include 'includes/header.php';
             </div>
             <?php endif; ?>
             <?php endif; ?>
+
+            <?php 
+            // SEO Article section for Admit page (always shown, after listing section)
+            $seoPageType = 'admit';
+            include __DIR__ . '/includes/seo-article.php';
+            ?>
         </div>
     </section>
 

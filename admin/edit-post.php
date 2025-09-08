@@ -4,6 +4,7 @@ require_once '../src/db.php';
 require_once '../src/helpers.php';
 require_once '../src/models/Post.php';
 require_once '../src/models/Author.php';
+require_once '../src/notifications.php';
 
 requireLogin();
 
@@ -22,6 +23,8 @@ $authors = $authorModel->getAll(1000, 0);
 
 $success = '';
 $error = '';
+// Store previous status for notification logic
+$GLOBALS['__prev_post_status'] = $post['status'] ?? null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title = sanitizeInput($_POST['title'] ?? '');
@@ -29,6 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $content = $_POST['content'] ?? '';
     $category_id = isset($_POST['category_id']) && $_POST['category_id'] !== '' ? (int)$_POST['category_id'] : null;
     $status = $_POST['status'] ?? 'published';
+    $send_push = isset($_POST['send_push']);
     $meta_title = sanitizeInput($_POST['meta_title'] ?? '');
     $meta_description = sanitizeInput($_POST['meta_description'] ?? '');
     $thumbnail_url = sanitizeInput($_POST['thumbnail_url'] ?? '');
@@ -50,6 +54,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($ok) {
             $success = 'Post updated successfully!';
             $post = $postModel->getById($id);
+            // If status transitioned to published, send push notification
+            $oldStatus = $post['status'] ?? 'published'; // default fallback
+            // We need previous status captured before update; we had $post earlier
+            // So compute from pre-update variable
+            $prevStatus = isset($GLOBALS['__prev_post_status']) ? $GLOBALS['__prev_post_status'] : ($oldStatus);
+            if ($send_push && $prevStatus !== 'published' && ($status === 'published')) {
+                $postForNotif = [
+                    'title' => $post['title'] ?? $title,
+                    'slug' => $post['slug'] ?? '',
+                    'excerpt' => $post['excerpt'] ?? '',
+                    'content' => $post['content'] ?? '',
+                    'thumbnail_url' => $post['thumbnail_url'] ?? null,
+                ];
+                try { onesignal_notify_post($postForNotif); } catch (Exception $e) { /* ignore */ }
+            }
         } else {
             $error = 'Failed to update post';
         }
@@ -107,6 +126,12 @@ include 'includes/header.php';
                                 <option value="published" <?= ($_POST['status'] ?? $post['status']) === 'published' ? 'selected' : '' ?>>Published</option>
                                 <option value="draft" <?= ($_POST['status'] ?? $post['status']) === 'draft' ? 'selected' : '' ?>>Draft</option>
                             </select>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="inline-flex items-center gap-2">
+                                <input type="checkbox" name="send_push" <?= isset($_POST['send_push']) ? 'checked' : '' ?>>
+                                <span>Send Push Notification (on Publish)</span>
+                            </label>
                         </div>
 
                         <div class="md:col-span-2">

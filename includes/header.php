@@ -13,6 +13,9 @@
     <link rel="icon" type="image/png" href="<?= SITE_URL ?>/assets/images/Examszfevicon.png">
     <link rel="apple-touch-icon" href="<?= SITE_URL ?>/assets/images/Examszfevicon.png">
     
+    <!-- Sitemap discovery -->
+    <link rel="sitemap" type="application/xml" title="Sitemap" href="<?= SITE_URL ?>/sitemap.xml.php">
+    
     <!-- Tailwind CSS with Typography plugin for .prose support -->
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
     <script>
@@ -35,9 +38,60 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/style.css">
     
+    <?php
+    // OneSignal SDK (render only when enabled and configured)
+    if (function_exists('getSetting') && (int)getSetting('onesignal_enabled', 0) === 1) {
+        $osAppId = getSetting('onesignal_app_id');
+        if (!empty($osAppId)) {
+            $osSafariId = getSetting('onesignal_safari_web_id');
+            $osSubdomain = getSetting('onesignal_subdomain');
+            ?>
+            <script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async></script>
+            <script>
+                window.OneSignalDeferred = window.OneSignalDeferred || [];
+                OneSignalDeferred.push(function(OneSignal) {
+                    OneSignal.init({
+                        appId: "<?= htmlspecialchars($osAppId) ?>",
+                        <?php if (!empty($osSafariId)): ?>
+                        safari_web_id: "<?= htmlspecialchars($osSafariId) ?>",
+                        <?php endif; ?>
+                        notifyButton: { enable: true },
+                        serviceWorkerParam: { scope: "/" },
+                        serviceWorkerPath: "<?= SITE_URL ?>/OneSignalSDKWorker.js",
+                        serviceWorkerUpdaterPath: "<?= SITE_URL ?>/OneSignalSDKUpdaterWorker.js",
+                        <?php if (!empty($osSubdomain)): ?>
+                        subdomainName: "<?= htmlspecialchars($osSubdomain) ?>",
+                        <?php endif; ?>
+                    });
+                });
+            </script>
+            <?php
+        }
+    }
+    ?>
+    
     <?php if (isset($additionalHead)): ?>
     <?= $additionalHead ?>
     <?php endif; ?>
+    
+    <!-- WebSite JSON-LD with SearchAction -->
+    <?php 
+      $siteUrl = rtrim(SITE_URL, '/');
+      $websiteSchema = [
+        '@context' => 'https://schema.org',
+        '@type' => 'WebSite',
+        'name' => 'Examsz',
+        'url' => $siteUrl . '/',
+        'potentialAction' => [
+          '@type' => 'SearchAction',
+          'target' => $siteUrl . '/search.php?q={search_term_string}',
+          'query-input' => 'required name=search_term_string'
+        ]
+      ];
+    ?>
+    <script type="application/ld+json">
+      <?= json_encode($websiteSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) ?>
+    </script>
 </head>
 <body class="bg-gray-50">
     <!-- Header -->

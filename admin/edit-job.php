@@ -5,6 +5,7 @@ require_once '../src/helpers.php';
 require_once '../src/models/Job.php';
 require_once '../src/models/Author.php';
 require_once '../src/models/Category.php';
+require_once '../src/notifications.php';
 
 requireLogin();
 
@@ -23,6 +24,8 @@ $job = $jobModel->getById($id);
 if (!$job) {
     redirect('jobs.php');
 }
+// Previous status for notification logic
+$__prev_status = $job['status'] ?? null;
 
 // Load existing flexible content for prefill
 $events = $jobModel->getEvents($id);
@@ -45,6 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $vacancy_count = (int)($_POST['vacancy_count'] ?? 0);
     $content = $_POST['content'] ?? '';
     $status = sanitizeInput($_POST['status'] ?? 'draft');
+    $send_push = isset($_POST['send_push']);
     $thumbnail_url = sanitizeInput($_POST['thumbnail_url'] ?? '');
     $author_id = isset($_POST['author_id']) && $_POST['author_id'] !== '' ? (int)$_POST['author_id'] : null;
     
@@ -217,6 +221,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $success = 'Job updated successfully!';
             // Refresh job data
             $job = $jobModel->getById($id);
+            // Send notification if transitioned from draft to published
+            if ($send_push && $__prev_status !== 'published' && $status === 'published') {
+                $jobForNotif = [
+                    'title' => $job['title'] ?? '',
+                    'slug' => $job['slug'] ?? '',
+                    'organization' => $job['organization'] ?? '',
+                    'thumbnail_url' => $job['thumbnail_url'] ?? null,
+                ];
+                try { onesignal_notify_job($jobForNotif); } catch (Exception $e) { /* ignore */ }
+            }
             // Refresh flexible content
             $events = $jobModel->getEvents($id);
             $links = $jobModel->getLinks($id);
@@ -356,9 +370,15 @@ include 'includes/header.php';
                         <div>
                             <label class="form-label">Status</label>
                             <select name="status" class="form-input">
-                                <option value="published" <?= $job['status'] === 'published' ? 'selected' : '' ?>>Published</option>
-                                <option value="draft" <?= $job['status'] === 'draft' ? 'selected' : '' ?>>Draft</option>
+                                <option value="published" <?= ($job['status'] === 'published') ? 'selected' : '' ?>>Published</option>
+                                <option value="draft" <?= ($job['status'] === 'draft') ? 'selected' : '' ?>>Draft</option>
                             </select>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="inline-flex items-center gap-2">
+                                <input type="checkbox" name="send_push" <?= isset($_POST['send_push']) ? 'checked' : '' ?>>
+                                <span>Send Push Notification (on Publish)</span>
+                            </label>
                         </div>
                     </div>
 

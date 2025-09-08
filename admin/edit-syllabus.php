@@ -4,6 +4,7 @@ require_once '../src/db.php';
 require_once '../src/helpers.php';
 require_once '../src/models/Syllabus.php';
 require_once '../src/models/Author.php';
+require_once '../src/notifications.php';
 
 requireLogin();
 
@@ -22,6 +23,8 @@ $syllabus = $syllabusModel->getById($id);
 if (!$syllabus) {
     redirect('syllabi.php');
 }
+// Previous status to detect publish transition
+$__prev_status = $syllabus['status'] ?? null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title = sanitizeInput($_POST['title'] ?? '');
@@ -31,6 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $download_url = sanitizeInput($_POST['download_url'] ?? '');
     $sections = $_POST['sections'] ?? '';
     $status = sanitizeInput($_POST['status'] ?? 'draft');
+    $send_push = isset($_POST['send_push']);
     $thumbnail_url = sanitizeInput($_POST['thumbnail_url'] ?? '');
     $author_id = isset($_POST['author_id']) && $_POST['author_id'] !== '' ? (int)$_POST['author_id'] : null;
     
@@ -57,6 +61,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Refresh syllabus data
             $syllabus = $syllabusModel->getById($id);
+            // Send push if transitioned to published
+            if ($send_push && $__prev_status !== 'published' && $status === 'published') {
+                $syllForNotif = [
+                    'title' => $syllabus['title'] ?? $title,
+                    'slug' => $syllabus['slug'] ?? '',
+                    'organization' => $syllabus['organization'] ?? '',
+                    'thumbnail_url' => $syllabus['thumbnail_url'] ?? null,
+                ];
+                try { onesignal_notify_syllabus($syllForNotif); } catch (Exception $e) { /* ignore */ }
+            }
         } catch (Throwable $e) {
             $error = 'Update failed: ' . htmlspecialchars($e->getMessage());
         }
@@ -161,6 +175,12 @@ include 'includes/header.php';
                                 <option value="draft" <?= $syllabus['status'] === 'draft' ? 'selected' : '' ?>>Draft</option>
                                 <option value="published" <?= $syllabus['status'] === 'published' ? 'selected' : '' ?>>Published</option>
                             </select>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="inline-flex items-center gap-2">
+                                <input type="checkbox" name="send_push" <?= isset($_POST['send_push']) ? 'checked' : '' ?>>
+                                <span>Send Push Notification (on Publish)</span>
+                            </label>
                         </div>
                     </div>
                     

@@ -128,8 +128,39 @@ include 'includes/header.php';
                 </div>
                 </div>
             </div>
+            
+            <?php // ItemList JSON-LD for syllabus ?>
+            <?php if (!empty($syllabuses)): ?>
+            <?php 
+                $items = [];
+                $pos = 1;
+                foreach ($syllabuses as $s) {
+                    $items[] = [
+                        '@type' => 'ListItem',
+                        'position' => $pos++,
+                        'url' => rtrim(SITE_URL, '/') . '/syllabus/' . urlencode($s['slug']),
+                        'name' => $s['title']
+                    ];
+                }
+                $itemList = [
+                    '@context' => 'https://schema.org',
+                    '@type' => 'ItemList',
+                    'name' => $pageTitle,
+                    'itemListElement' => $items
+                ];
+            ?>
+            <script type="application/ld+json">
+                <?= json_encode($itemList, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) ?>
+            </script>
+            <?php endif; ?>
             <?php endif; ?>
         </div>
     </section>
+
+    <?php 
+    // SEO Article section for Syllabus page (always shown, after listing section)
+    $seoPageType = 'syllabus';
+    include __DIR__ . '/includes/seo-article.php';
+    ?>
 
 <?php include 'includes/footer.php'; ?>

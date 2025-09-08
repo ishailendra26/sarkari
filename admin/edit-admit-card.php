@@ -4,6 +4,7 @@ require_once '../src/db.php';
 require_once '../src/helpers.php';
 require_once '../src/models/AdmitCard.php';
 require_once '../src/models/Author.php';
+require_once '../src/notifications.php';
 
 requireLogin();
 
@@ -22,6 +23,8 @@ $admitCard = $admitCardModel->getById($id);
 if (!$admitCard) {
     redirect('admit-cards.php');
 }
+// Previous status for transition detection
+$__prev_status = $admitCard['status'] ?? null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title = sanitizeInput($_POST['title'] ?? '');
@@ -31,6 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $instructions = $_POST['instructions'] ?? '';
     $required_documents = $_POST['required_documents'] ?? '';
     $status = sanitizeInput($_POST['status'] ?? 'draft');
+    $send_push = isset($_POST['send_push']);
     $thumbnail_url = sanitizeInput($_POST['thumbnail_url'] ?? '');
     $author_id = isset($_POST['author_id']) && $_POST['author_id'] !== '' ? (int)$_POST['author_id'] : null;
     
@@ -122,6 +126,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $success = 'Admit card updated successfully!';
             // Refresh admit card data
             $admitCard = $admitCardModel->getById($id);
+            // If transitioned to published and opted-in, send push
+            if ($send_push && $__prev_status !== 'published' && $status === 'published') {
+                $admitForNotif = [
+                    'title' => $admitCard['title'] ?? $title,
+                    'slug' => $admitCard['slug'] ?? '',
+                    'organization' => $admitCard['organization'] ?? '',
+                    'thumbnail_url' => $admitCard['thumbnail_url'] ?? null,
+                ];
+                try { onesignal_notify_admit($admitForNotif); } catch (Exception $e) { /* ignore */ }
+            }
         } catch (Throwable $e) {
             $error = 'Update failed: ' . htmlspecialchars($e->getMessage());
         }
@@ -233,6 +247,12 @@ include 'includes/header.php';
                                 <option value="draft" <?= $admitCard['status'] === 'draft' ? 'selected' : '' ?>>Draft</option>
                                 <option value="published" <?= $admitCard['status'] === 'published' ? 'selected' : '' ?>>Published</option>
                             </select>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="inline-flex items-center gap-2">
+                                <input type="checkbox" name="send_push" <?= isset($_POST['send_push']) ? 'checked' : '' ?>>
+                                <span>Send Push Notification (on Publish)</span>
+                            </label>
                         </div>
                     </div>
 

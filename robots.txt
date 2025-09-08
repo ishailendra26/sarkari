@@ -1,0 +1,13 @@
+# robots.txt for Examsz
+# Update the Sitemap URL to an absolute URL if needed (recommended by Google)
+
+User-agent: *
+# Disallow admin and migration scripts from crawling
+Disallow: /admin/
+Disallow: /migrations/
+
+# Allow everything else
+Allow: /
+
+# Sitemap location (absolute URL recommended by Google)
+Sitemap: https://www.examsz.in/sitemap.xml.php
