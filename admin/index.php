@@ -6,6 +6,7 @@ require_once '../src/models/Job.php';
 require_once '../src/models/Result.php';
 require_once '../src/models/AdmitCard.php';
 require_once '../src/models/Post.php';
+require_once '../src/models/Syllabus.php';
 
 requireLogin();
 
@@ -13,12 +14,14 @@ $jobModel = new Job();
 $resultModel = new Result();
 $admitModel = new AdmitCard();
 $postModel = new Post();
+$syllabusModel = new Syllabus();
 
 // Get dashboard stats
 $totalJobs = $jobModel->getCount();
 $totalResults = $resultModel->getCount();
 $totalAdmits = $admitModel->getCount();
 $totalPosts = $postModel->getCount();
+$totalSyllabi = $syllabusModel->getCount();
 
 $recentJobs = $jobModel->getLatest(5);
 $recentResults = $resultModel->getLatest(5);
@@ -70,12 +73,26 @@ include 'includes/header.php';
                 <div class="bg-white rounded-lg shadow-md p-6">
                     <div class="flex items-center justify-between">
                         <div>
-                            <h3 class="text-2xl font-bold text-gray-800"><?= $totalPosts ?></h3>
-                            <p class="text-gray-600">Total Posts</p>
+                            <h3 class="text-2xl font-bold text-gray-800"><?= $totalSyllabi ?></h3>
+                            <p class="text-gray-600">Syllabi</p>
                         </div>
                         <i class="fas fa-file-alt text-3xl text-purple-600"></i>
                     </div>
-                    <a href="syllabi.php" class="block mt-4 text-purple-600 hover:text-purple-800 font-medium">View Syllabus →</a>
+                    <a href="syllabi.php" class="block mt-4 text-purple-600 hover:text-purple-800 font-medium">View Syllabi →</a>
+                </div>
+            </div>
+
+            <!-- Additional Stats Row -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-2xl font-bold text-gray-800"><?= $totalPosts ?></h3>
+                            <p class="text-gray-600">Total Posts</p>
+                        </div>
+                        <i class="fas fa-newspaper text-3xl text-indigo-600"></i>
+                    </div>
+                    <a href="posts.php" class="block mt-4 text-indigo-600 hover:text-indigo-800 font-medium">View Posts →</a>
                 </div>
             </div>
 

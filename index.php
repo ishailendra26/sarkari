@@ -196,7 +196,7 @@ include 'includes/header.php';
     <!-- Latest At A Glance: Results, Admit Cards, Jobs (Top 10 each) -->
     <section class="py-10 bg-white">
         <div class="container mx-auto px-4">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                 <!-- Results -->
                 <div class="bg-green-50 rounded-lg p-5">
                     <div class="flex items-center mb-3">
@@ -205,10 +205,11 @@ include 'includes/header.php';
                     </div>
                     <ul class="divide-y divide-gray-200 bg-white rounded-lg overflow-hidden">
                         <?php foreach ($latestResults as $i => $result): ?>
-                        <li class="p-3 hover:bg-gray-50">
-                            <a href="<?= SITE_URL ?>/result/<?= urlencode($result['slug']) ?>" class="flex items-start gap-3">
-                                <span class="text-xs text-gray-500 mt-1 w-16 shrink-0"><?= timeAgo($result['published_at']) ?></span>
-                                <span class="text-gray-800 font-medium line-clamp-2"><?= htmlspecialchars($result['title']) ?></span>
+                        <li class="p-3 sm:p-3 hover:bg-gray-50">
+                            <a href="<?= SITE_URL ?>/result/<?= urlencode($result['slug']) ?>" class="flex flex-col sm:flex-row items-start gap-1.5 sm:gap-3">
+                                <span class="text-xs text-gray-500 sm:mt-1 w-20 shrink-0 hidden sm:inline-block"><?= timeAgo($result['published_at']) ?></span>
+                                <span class="text-gray-800 font-medium leading-snug line-clamp-2"><?= htmlspecialchars($result['title']) ?></span>
+                                <span class="text-[11px] text-gray-500 sm:hidden mt-0.5"><?= timeAgo($result['published_at']) ?></span>
                             </a>
                         </li>
                         <?php endforeach; ?>
@@ -226,10 +227,11 @@ include 'includes/header.php';
                     </div>
                     <ul class="divide-y divide-gray-200 bg-white rounded-lg overflow-hidden">
                         <?php foreach ($latestAdmits as $admit): ?>
-                        <li class="p-3 hover:bg-gray-50">
-                            <a href="<?= SITE_URL ?>/admit/<?= urlencode($admit['slug']) ?>" class="flex items-start gap-3">
-                                <span class="text-xs text-gray-500 mt-1 w-16 shrink-0"><?= timeAgo($admit['published_at']) ?></span>
-                                <span class="text-gray-800 font-medium line-clamp-2"><?= htmlspecialchars($admit['title']) ?></span>
+                        <li class="p-3 sm:p-3 hover:bg-gray-50">
+                            <a href="<?= SITE_URL ?>/admit/<?= urlencode($admit['slug']) ?>" class="flex flex-col sm:flex-row items-start gap-1.5 sm:gap-3">
+                                <span class="text-xs text-gray-500 sm:mt-1 w-20 shrink-0 hidden sm:inline-block"><?= timeAgo($admit['published_at']) ?></span>
+                                <span class="text-gray-800 font-medium leading-snug line-clamp-2"><?= htmlspecialchars($admit['title']) ?></span>
+                                <span class="text-[11px] text-gray-500 sm:hidden mt-0.5"><?= timeAgo($admit['published_at']) ?></span>
                             </a>
                         </li>
                         <?php endforeach; ?>
@@ -247,15 +249,18 @@ include 'includes/header.php';
                     </div>
                     <ul class="divide-y divide-gray-200 bg-white rounded-lg overflow-hidden">
                         <?php foreach ($latestJobs as $job): ?>
-                        <li class="p-3 hover:bg-gray-50">
-                            <a href="<?= SITE_URL ?>/job/<?= urlencode($job['slug']) ?>" class="flex items-start gap-3 justify-between">
+                        <li class="p-3 sm:p-3 hover:bg-gray-50">
+                            <a href="<?= SITE_URL ?>/job/<?= urlencode($job['slug']) ?>" class="flex flex-col gap-1.5">
                                 <div class="flex items-start gap-3">
-                                    <span class="text-xs text-gray-500 mt-1 w-16 shrink-0"><?= timeAgo($job['published_at']) ?></span>
-                                    <span class="text-gray-800 font-medium line-clamp-2"><?= htmlspecialchars($job['title']) ?></span>
+                                    <span class="text-xs text-gray-500 sm:mt-1 w-20 shrink-0 hidden sm:inline-block"><?= timeAgo($job['published_at']) ?></span>
+                                    <span class="text-gray-800 font-medium leading-snug line-clamp-2"><?= htmlspecialchars($job['title']) ?></span>
                                 </div>
-                                <?php if (!empty($job['last_date'])): ?>
-                                <span class="badge badge-danger whitespace-nowrap">Last: <?= formatDate($job['last_date']) ?></span>
-                                <?php endif; ?>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-[11px] text-gray-500 sm:hidden"><?= timeAgo($job['published_at']) ?></span>
+                                    <?php if (!empty($job['last_date'])): ?>
+                                    <span class="badge badge-danger whitespace-nowrap self-start sm:self-center">Last: <?= formatDate($job['last_date']) ?></span>
+                                    <?php endif; ?>
+                                </div>
                             </a>
                         </li>
                         <?php endforeach; ?>
