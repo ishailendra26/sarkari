@@ -67,8 +67,40 @@ function excerpt($text, $length = 150) {
     return substr($text, 0, $length) . '...';
 }
 
-function formatDate($date, $format = 'd M Y') {
-    return date($format, strtotime($date));
+function formatDate($date, $format = 'd M Y', $outTzName = null) {
+    if (!$date) {
+        return '';
+    }
+    $inTzName = defined('DB_TIMEZONE') ? DB_TIMEZONE : 'UTC';
+    $outTzName = $outTzName ?: (defined('APP_TIMEZONE') ? APP_TIMEZONE : $inTzName);
+    try {
+        $inTz = new DateTimeZone($inTzName);
+    } catch (Exception $e) {
+        $inTz = new DateTimeZone('UTC');
+    }
+    try {
+        $outTz = new DateTimeZone($outTzName);
+    } catch (Exception $e) {
+        $outTz = $inTz;
+    }
+
+    $dt = false;
+    // Support date-only and datetime strings. Treat naive values as DB timezone.
+    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)$date)) {
+        $dt = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $date . ' 00:00:00', $inTz);
+    } elseif (preg_match('/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}$/', (string)$date)) {
+        $dt = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', str_replace('T', ' ', $date), $inTz);
+    }
+    if (!$dt) {
+        try {
+            $dt = new DateTimeImmutable((string)$date, $inTz);
+        } catch (Exception $e) {
+            return '';
+        }
+    }
+
+    $dt = $dt->setTimezone($outTz);
+    return $dt->format($format);
 }
 
 function timeAgo($datetime) {
@@ -76,12 +108,42 @@ function timeAgo($datetime) {
     if (!$datetime) {
         return 'just now';
     }
-    $ts = @strtotime($datetime);
+
+    // Determine the timezone in which DB timestamps are stored (assume UTC unless configured)
+    $dbTzName = defined('DB_TIMEZONE') ? DB_TIMEZONE : 'UTC';
+    try {
+        $dbTz = new DateTimeZone($dbTzName);
+    } catch (Exception $e) {
+        $dbTz = new DateTimeZone('UTC');
+    }
+
+    $ts = false;
+    // Try parsing as a naive "Y-m-d H:i:s" in DB timezone first (common for MySQL DATETIME)
+    if (preg_match('/^\d{4}-\d{2}-\d{2}(?:[ T]\d{2}:\d{2}:\d{2})?$/', (string)$datetime)) {
+        // If only date provided, append midnight time to avoid strtotime quirks
+        $dtString = strlen($datetime) === 10 ? $datetime . ' 00:00:00' : $datetime;
+        $dt = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $dtString, $dbTz);
+        if ($dt instanceof DateTimeImmutable) {
+            $ts = $dt->getTimestamp();
+        }
+    }
+
+    // Fallback: let PHP parse (may contain timezone info like Z or +05:30)
+    if ($ts === false) {
+        $dt = @new DateTimeImmutable($datetime, $dbTz);
+        if ($dt) {
+            $ts = $dt->getTimestamp();
+        }
+    }
+
     if ($ts === false) {
         return 'just now';
     }
 
-    $diff = time() - $ts; // seconds
+    // Compare using the same timezone to avoid offsets
+    $now = new DateTimeImmutable('now', $dbTz);
+    $diff = $now->getTimestamp() - $ts; // seconds
+
     // Clamp future timestamps to 'just now' to avoid "in X" wording
     if ($diff <= 0) {
         return 'just now';
@@ -199,6 +261,49 @@ function requireLogin() {
     if (!isLoggedIn()) {
         redirect('/admin/login.php');
     }
+}
+
+// Role/permission helpers
+function currentUserRole() {
+    startSession();
+    return $_SESSION['admin_role'] ?? 'admin';
+}
+
+function isAdmin() {
+    return currentUserRole() === 'admin';
+}
+
+function isEditor() {
+    return currentUserRole() === 'editor';
+}
+
+function requireAdmin() {
+    if (!isAdmin()) {
+        // Editors (or others) cannot access this area
+        // Redirect to admin dashboard with an error flag
+        header('Location: /admin/index.php?forbidden=1');
+        exit();
+    }
+}
+
+// Granular permissions
+function canDeleteContent() {
+    // Only Admins can delete
+    return isAdmin();
+}
+
+function canManageAds() {
+    // Only Admins can manage ads
+    return isAdmin();
+}
+
+function canManageSettings() {
+    // Only Admins can manage settings
+    return isAdmin();
+}
+
+function renderForbiddenAlert() {
+    echo '<div class="alert alert-error mb-6"><i class="fas fa-exclamation-triangle mr-2"></i>Access denied</div>';
 }
 
 function logout() {

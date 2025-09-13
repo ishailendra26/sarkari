@@ -5,6 +5,7 @@ require_once '../src/helpers.php';
 require_once '../src/models/Ad.php';
 
 requireLogin();
+requireAdmin();
 
 $adModel = new Ad();
 

@@ -23,6 +23,9 @@ $pagination = paginate($totalSyllabi, $page, JOBS_PER_PAGE);
 
 // Handle delete action
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete') {
+    if (!canDeleteContent()) {
+        redirect('syllabi.php?forbidden=1');
+    }
     $id = (int)($_POST['id'] ?? 0);
     if ($id) {
         $syllabusModel->delete($id);
@@ -121,10 +124,12 @@ include 'includes/header.php';
                                        class="text-green-600 hover:text-green-800" title="Edit">
                                         <i class="fas fa-edit"></i>
                                     </a>
+                                    <?php if (canDeleteContent()): ?>
                                     <button onclick="deleteSyllabus(<?= $syllabus['id'] ?>, '<?= addslashes($syllabus['title']) ?>')"
                                             class="text-red-600 hover:text-red-800" title="Delete">
                                         <i class="fas fa-trash"></i>
                                     </button>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>

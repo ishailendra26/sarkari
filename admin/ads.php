@@ -5,10 +5,11 @@ require_once '../src/helpers.php';
 require_once '../src/models/Ad.php';
 
 requireLogin();
+requireAdmin();
 
 $adModel = new Ad();
 
-// Delete
+// Delete (admin-only)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete') {
     $id = (int)($_POST['id'] ?? 0);
     if ($id) {

@@ -53,10 +53,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     if ($action === 'delete') {
+        if (!canDeleteContent()) {
+            $error = 'Access denied';
+        } else {
         $id = (int)($_POST['id'] ?? 0);
         if ($id) {
             $categoryModel->delete($id);
             $success = 'Category deleted successfully';
+        }
         }
     }
 }
@@ -142,6 +146,7 @@ include 'includes/header.php';
                                                     class="text-green-600 hover:text-green-800" title="Edit">
                                                 <i class="fas fa-edit"></i>
                                             </button>
+                                            <?php if (canDeleteContent()): ?>
                                             <form method="POST" class="inline" onsubmit="return confirm('Are you sure?')">
                                                 <input type="hidden" name="action" value="delete">
                                                 <input type="hidden" name="id" value="<?= $category['id'] ?>">
@@ -149,6 +154,7 @@ include 'includes/header.php';
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </form>
+                                            <?php endif; ?>
                                         </div>
                                     </td>
                                 </tr>

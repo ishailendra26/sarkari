@@ -5,6 +5,7 @@ require_once '../src/helpers.php';
 require_once '../src/notifications.php';
 
 requireLogin();
+requireAdmin();
 
 $db = getDB();
 $success = '';

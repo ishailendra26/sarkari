@@ -15,14 +15,18 @@ $error = '';
 
 // Handle delete
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete') {
-    $id = (int)($_POST['id'] ?? 0);
-    if ($id) {
-        try {
-            // ON DELETE SET NULL is enforced by FK, so safe to delete
-            $db->query('DELETE FROM authors WHERE id = ?', [$id]);
-            $success = 'Author deleted successfully';
-        } catch (Exception $e) {
-            $error = 'Failed to delete author';
+    if (!canDeleteContent()) {
+        $error = 'Access denied';
+    } else {
+        $id = (int)($_POST['id'] ?? 0);
+        if ($id) {
+            try {
+                // ON DELETE SET NULL is enforced by FK, so safe to delete
+                $db->query('DELETE FROM authors WHERE id = ?', [$id]);
+                $success = 'Author deleted successfully';
+            } catch (Exception $e) {
+                $error = 'Failed to delete author';
+            }
         }
     }
 }
@@ -96,11 +100,13 @@ include 'includes/header.php';
                             <td class="px-6 py-4 text-right">
                                 <div class="flex justify-end items-center gap-4 flex-wrap">
                                     <a href="edit-author.php?id=<?= $a['id'] ?>" class="text-primary hover:text-blue-700 inline-flex items-center"><i class="fas fa-edit mr-1"></i>Edit</a>
+                                    <?php if (canDeleteContent()): ?>
                                     <form method="POST" class="inline" onsubmit="return confirmDelete('Delete this author? Content will remain but without an author.');">
                                         <input type="hidden" name="action" value="delete">
                                         <input type="hidden" name="id" value="<?= $a['id'] ?>">
                                         <button type="submit" class="text-red-600 hover:text-red-700 inline-flex items-center"><i class="fas fa-trash mr-1"></i>Delete</button>
                                     </form>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>

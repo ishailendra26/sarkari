@@ -150,17 +150,35 @@ $pageTitle = $pageTitle ?? 'Admin Dashboard';
                         </a>
                     </li>
                     <li>
+                        <?php if (isAdmin()): ?>
                         <a href="ads.php" class="flex items-center p-3 rounded-lg transition-colors <?= $currentPage === 'ads' ? 'bg-primary text-white' : 'text-gray-700 hover:bg-gray-100' ?>">
                             <i class="fas fa-ad mr-3"></i>
                             <span>Ads</span>
                         </a>
+                        <?php endif; ?>
                     </li>
                     <li>
+                        <?php if (isAdmin()): ?>
                         <a href="settings.php" class="flex items-center p-3 rounded-lg transition-colors <?= $currentPage === 'settings' ? 'bg-primary text-white' : 'text-gray-700 hover:bg-gray-100' ?>">
                             <i class="fas fa-cog mr-3"></i>
                             <span>Settings</span>
                         </a>
+                        <?php endif; ?>
                     </li>
+                    <?php if (isAdmin()): ?>
+                    <li>
+                        <a href="users.php" class="flex items-center p-3 rounded-lg transition-colors <?= $currentPage === 'users' ? 'bg-primary text-white' : 'text-gray-700 hover:bg-gray-100' ?>">
+                            <i class="fas fa-users mr-3"></i>
+                            <span>Users</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="add-user.php" class="flex items-center p-3 rounded-lg transition-colors <?= $currentPage === 'add-user' ? 'bg-primary text-white' : 'text-gray-700 hover:bg-gray-100' ?>">
+                            <i class="fas fa-user-plus mr-3"></i>
+                            <span>Add User</span>
+                        </a>
+                    </li>
+                    <?php endif; ?>
                     <li>
                         <a href="upload-media.php" class="flex items-center p-3 rounded-lg transition-colors <?= $currentPage === 'upload-media' ? 'bg-primary text-white' : 'text-gray-700 hover:bg-gray-100' ?>">
                             <i class="fas fa-cloud-upload-alt mr-3"></i>

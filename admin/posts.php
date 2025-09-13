@@ -29,6 +29,9 @@ $categories = $categoryModel->getAll();
 
 // Delete
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete') {
+    if (!canDeleteContent()) {
+        redirect('posts.php?forbidden=1');
+    }
     $id = (int)($_POST['id'] ?? 0);
     if ($id) {
         $postModel->delete($id);
@@ -117,7 +120,9 @@ include 'includes/header.php';
                                 <div class="flex gap-2">
                                     <a href="<?= SITE_URL ?>/post/<?= urlencode($p['slug']) ?>" target="_blank" class="text-blue-600 hover:text-blue-800" title="View"><i class="fas fa-eye"></i></a>
                                     <a href="edit-post.php?id=<?= $p['id'] ?>" class="text-green-600 hover:text-green-800" title="Edit"><i class="fas fa-edit"></i></a>
+                                    <?php if (canDeleteContent()): ?>
                                     <button onclick="deletePost(<?= $p['id'] ?>, '<?= addslashes($p['title']) ?>')" class="text-red-600 hover:text-red-800" title="Delete"><i class="fas fa-trash"></i></button>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>
