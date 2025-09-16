@@ -108,6 +108,8 @@
     <script type="application/ld+json">
       <?= json_encode($websiteSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) ?>
     </script>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3803763924146690"
+     crossorigin="anonymous"></script>
 </head>
 <body class="bg-gray-50">
     <!-- Header -->
