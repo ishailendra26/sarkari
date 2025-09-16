@@ -52,12 +52,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ];
         $ok = $postModel->update($id, $data);
         if ($ok) {
-            $success = 'Post updated successfully!';
             $post = $postModel->getById($id);
             // If status transitioned to published, send push notification
             $oldStatus = $post['status'] ?? 'published'; // default fallback
-            // We need previous status captured before update; we had $post earlier
-            // So compute from pre-update variable
             $prevStatus = isset($GLOBALS['__prev_post_status']) ? $GLOBALS['__prev_post_status'] : ($oldStatus);
             if ($send_push && $prevStatus !== 'published' && ($status === 'published')) {
                 $postForNotif = [
@@ -69,6 +66,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ];
                 try { onesignal_notify_post($postForNotif); } catch (Exception $e) { /* ignore */ }
             }
+            // PRG: redirect to posts list to avoid duplicate submission on refresh
+            redirect('posts.php?updated=1');
+            // Unreachable after redirect
+            $success = 'Post updated successfully!';
         } else {
             $error = 'Failed to update post';
         }

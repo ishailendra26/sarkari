@@ -232,7 +232,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 if (!empty($faqs)) { $jobModel->saveFaqs($jobId, $faqs); }
 
-                $success = 'Job created successfully!';
+                // Send notification (if applicable) first, then redirect for PRG
                 if ($send_push && $status === 'published') {
                     $jobForNotif = [
                         'title' => $title,
@@ -242,6 +242,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ];
                     try { onesignal_notify_job($jobForNotif); } catch (Exception $e) { /* ignore */ }
                 }
+                // Redirect to list (PRG) to avoid duplicate submissions
+                redirect('jobs.php?saved=1');
+                // Unreachable after redirect; kept for clarity
+                $success = 'Job created successfully!';
             } else {
                 $error = 'Failed to create job';
             }

@@ -218,10 +218,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $jobModel->saveAgeLimit($id, $ageData);
             }
 
-            $success = 'Job updated successfully!';
-            // Refresh job data
-            $job = $jobModel->getById($id);
             // Send notification if transitioned from draft to published
+            // Refresh job data first to have latest slug, etc.
+            $job = $jobModel->getById($id);
             if ($send_push && $__prev_status !== 'published' && $status === 'published') {
                 $jobForNotif = [
                     'title' => $job['title'] ?? '',
@@ -231,7 +230,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ];
                 try { onesignal_notify_job($jobForNotif); } catch (Exception $e) { /* ignore */ }
             }
-            // Refresh flexible content
+            // PRG: redirect to list to prevent duplicate submissions
+            redirect('jobs.php?updated=1');
+            // Unreachable after redirect, but keep refresh logic if redirect removed in future
+            $success = 'Job updated successfully!';
             $events = $jobModel->getEvents($id);
             $links = $jobModel->getLinks($id);
             $fees = $jobModel->getFees($id);

@@ -24,6 +24,7 @@ include __DIR__ . '/../includes/header.php';
 
     <h2>Update</h2>
     <p>This site disclaimer was last updated on <?= date('d M Y') ?>. Should we update, amend or make any changes, those changes will be posted here.</p>
+    Email: <a href="mailto:examsz.in@gmail.com">examsz.in@gmail.com</a>
   </div>
 </section>
 

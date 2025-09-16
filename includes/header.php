@@ -45,6 +45,12 @@
         if (!empty($osAppId)) {
             $osSafariId = getSetting('onesignal_safari_web_id');
             $osSubdomain = getSetting('onesignal_subdomain');
+
+            // Compute correct scope if the app is hosted in a subdirectory (e.g., /sarkari/)
+            $parsedPath = rtrim(parse_url(SITE_URL, PHP_URL_PATH) ?: '/', '/');
+            $scopePath = $parsedPath === '' ? '/' : ($parsedPath . '/');
+            $swPath = $scopePath . 'OneSignalSDKWorker.js';
+            $swUpdaterPath = $scopePath . 'OneSignalSDKUpdaterWorker.js';
             ?>
             <script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async></script>
             <script>
@@ -56,12 +62,22 @@
                         safari_web_id: "<?= htmlspecialchars($osSafariId) ?>",
                         <?php endif; ?>
                         notifyButton: { enable: true },
-                        serviceWorkerParam: { scope: "/" },
-                        serviceWorkerPath: "<?= SITE_URL ?>/OneSignalSDKWorker.js",
-                        serviceWorkerUpdaterPath: "<?= SITE_URL ?>/OneSignalSDKUpdaterWorker.js",
+                        serviceWorkerParam: { scope: "<?= $scopePath ?>" },
+                        serviceWorkerPath: "<?= $swPath ?>",
+                        serviceWorkerUpdaterPath: "<?= $swUpdaterPath ?>",
                         <?php if (!empty($osSubdomain)): ?>
                         subdomainName: "<?= htmlspecialchars($osSubdomain) ?>",
                         <?php endif; ?>
+                    });
+
+                    // Auto show the slidedown permission prompt if not subscribed yet
+                    OneSignal.User.PushSubscription.getOptedIn().then(function(optedIn){
+                        if (!optedIn) {
+                            // Gracefully try the modern slidedown; ignore if unavailable
+                            if (OneSignal.Slidedown && OneSignal.Slidedown.promptPush) {
+                                OneSignal.Slidedown.promptPush();
+                            }
+                        }
                     });
                 });
             </script>

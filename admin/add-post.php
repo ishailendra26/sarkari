@@ -54,8 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $id = $postModel->create($data);
         if ($id) {
-            $success = 'Post created successfully!';
-            // Send push notification if published and opted-in
+            // Send push notification (if applicable) first
             if ($send_push && $status === 'published') {
                 $postForNotif = [
                     'title' => $title,
@@ -66,6 +65,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ];
                 try { onesignal_notify_post($postForNotif); } catch (Exception $e) { /* ignore */ }
             }
+            // PRG redirect to posts list
+            redirect('posts.php?saved=1');
+            // Unreachable after redirect
+            $success = 'Post created successfully!';
         } else {
             $error = 'Failed to create post';
         }

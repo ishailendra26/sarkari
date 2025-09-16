@@ -25,6 +25,7 @@ include __DIR__ . '/../includes/header.php';
 
     <h2>Contact</h2>
     <p>For any queries about these Terms, please visit our <a href="<?= SITE_URL ?>/pages/contact.php">Contact</a> page.</p>
+    Email: <a href="mailto:examsz.in@gmail.com">examsz.in@gmail.com</a>
   </div>
 </section>
 

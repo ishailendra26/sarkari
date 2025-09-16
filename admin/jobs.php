@@ -13,13 +13,16 @@ $categoryModel = new Category();
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $search = isset($_GET['search']) ? sanitizeInput($_GET['search']) : null;
 $category = isset($_GET['category']) ? sanitizeInput($_GET['category']) : null;
+$status = isset($_GET['status']) ? sanitizeInput($_GET['status']) : 'all';
 
 if ($search) {
+    // Search currently targets published only
     $jobs = $jobModel->search($search, JOBS_PER_PAGE, ($page - 1) * JOBS_PER_PAGE);
     $totalJobs = count($jobModel->search($search, 1000, 0));
 } else {
-    $jobs = $jobModel->getAll(JOBS_PER_PAGE, ($page - 1) * JOBS_PER_PAGE, $category);
-    $totalJobs = $jobModel->getCount($category);
+    // Admin-inclusive list (shows drafts/published based on filter)
+    $jobs = $jobModel->getAllAdmin(JOBS_PER_PAGE, ($page - 1) * JOBS_PER_PAGE, $category, $status);
+    $totalJobs = $jobModel->getCountAdmin($category, $status);
 }
 
 $pagination = paginate($totalJobs, $page, JOBS_PER_PAGE);
@@ -40,6 +43,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 $pageTitle = 'Manage Jobs';
 include 'includes/header.php';
 ?>
+        <?php if (isset($_GET['saved'])): ?>
+        <div class="alert alert-success mb-6">
+            <i class="fas fa-check-circle mr-2"></i>Job saved successfully
+        </div>
+        <?php endif; ?>
+        <?php if (isset($_GET['updated'])): ?>
+        <div class="alert alert-success mb-6">
+            <i class="fas fa-check-circle mr-2"></i>Job updated successfully
+        </div>
+        <?php endif; ?>
         <?php if (isset($_GET['deleted'])): ?>
         <div class="alert alert-success mb-6">
             <i class="fas fa-check-circle mr-2"></i>Job deleted successfully
@@ -61,6 +74,13 @@ include 'includes/header.php';
                             <?= htmlspecialchars($cat['name']) ?>
                         </option>
                         <?php endforeach; ?>
+                    </select>
+                </div>
+                <div>
+                    <select id="status-filter" class="form-input">
+                        <option value="all" <?= $status === 'all' ? 'selected' : '' ?>>All Statuses</option>
+                        <option value="published" <?= $status === 'published' ? 'selected' : '' ?>>Published</option>
+                        <option value="draft" <?= $status === 'draft' ? 'selected' : '' ?>>Draft</option>
                     </select>
                 </div>
                 <div>
@@ -215,12 +235,14 @@ include 'includes/header.php';
         function applyFilters() {
             const search = document.getElementById('search-input').value;
             const category = document.getElementById('category-filter').value;
+            const status = document.getElementById('status-filter').value;
             
             let url = 'jobs.php';
             const params = [];
             
             if (search) params.push('search=' + encodeURIComponent(search));
             if (category) params.push('category=' + encodeURIComponent(category));
+            if (status) params.push('status=' + encodeURIComponent(status));
             
             if (params.length > 0) {
                 url += '?' + params.join('&');

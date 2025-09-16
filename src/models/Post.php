@@ -8,6 +8,51 @@ class Post {
         $this->db = getDB();
     }
 
+    // Admin listings: include drafts and allow filtering by status and category slug
+    public function getAllAdmin($limit = 15, $offset = 0, $categorySlug = null, $status = 'all') {
+        $sql = "SELECT p.*, c.name as category_name, c.slug as category_slug, 
+                        a.name as author_name, a.avatar_url as author_avatar
+                FROM posts p 
+                LEFT JOIN categories c ON p.category_id = c.id 
+                LEFT JOIN authors a ON p.author_id = a.id";
+        $where = [];
+        $params = [];
+        if ($status && $status !== 'all') {
+            $where[] = "p.status = ?";
+            $params[] = $status;
+        }
+        if ($categorySlug) {
+            $where[] = "c.slug = ?";
+            $params[] = $categorySlug;
+        }
+        if ($where) {
+            $sql .= " WHERE " . implode(' AND ', $where);
+        }
+        $sql .= " ORDER BY COALESCE(p.published_at, p.updated_at, p.created_at) DESC LIMIT ? OFFSET ?";
+        $params[] = $limit;
+        $params[] = $offset;
+        return $this->db->fetchAll($sql, $params);
+    }
+
+    public function getCountAdmin($categorySlug = null, $status = 'all') {
+        $sql = "SELECT COUNT(*) as count FROM posts p LEFT JOIN categories c ON p.category_id = c.id";
+        $where = [];
+        $params = [];
+        if ($status && $status !== 'all') {
+            $where[] = "p.status = ?";
+            $params[] = $status;
+        }
+        if ($categorySlug) {
+            $where[] = "c.slug = ?";
+            $params[] = $categorySlug;
+        }
+        if ($where) {
+            $sql .= " WHERE " . implode(' AND ', $where);
+        }
+        $row = $this->db->fetchOne($sql, $params);
+        return (int)($row['count'] ?? 0);
+    }
+
     public function getAll($limit = 15, $offset = 0, $category = null) {
         $sql = "SELECT p.*, c.name as category_name, c.slug as category_slug, 
                         a.name as author_name, a.avatar_url as author_avatar

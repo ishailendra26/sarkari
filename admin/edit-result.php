@@ -134,8 +134,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $resultModel->saveSections($id, $sections);
             $resultModel->saveFaqs($id, $faqs);
 
-            $success = 'Result updated successfully!';
-            
             // Refresh result data
             $result = $resultModel->getById($id);
             // Notify if transitioned to published
@@ -148,6 +146,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ];
                 try { onesignal_notify_result($resultForNotif); } catch (Exception $e) { /* ignore */ }
             }
+            // PRG: redirect to list
+            redirect('results.php?updated=1');
+            // Unreachable after redirect; kept for clarity
+            $success = 'Result updated successfully!';
         } catch (Throwable $e) {
             $msg = $e->getMessage();
             $friendly = '';

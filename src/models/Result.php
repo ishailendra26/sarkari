@@ -13,6 +13,20 @@ class Result {
         return $this->db->fetchAll($sql, [$limit, $offset]);
     }
 
+    // Admin listings: include drafts/published filter
+    public function getAllAdmin($limit = 10, $offset = 0, $status = 'all'): array {
+        $sql = "SELECT * FROM results";
+        $params = [];
+        if ($status && $status !== 'all') {
+            $sql .= " WHERE status = ?";
+            $params[] = $status;
+        }
+        $sql .= " ORDER BY COALESCE(published_at, updated_at, created_at) DESC LIMIT ? OFFSET ?";
+        $params[] = $limit;
+        $params[] = $offset;
+        return $this->db->fetchAll($sql, $params);
+    }
+
     public function getBySlug($slug) {
         $sql = "SELECT * FROM results WHERE slug = ?";
         return $this->db->fetchOne($sql, [$slug]);
@@ -56,6 +70,17 @@ class Result {
     public function getCount() {
         $result = $this->db->fetchOne("SELECT COUNT(*) as count FROM results");
         return $result['count'];
+    }
+
+    public function getCountAdmin($status = 'all'): int {
+        $sql = "SELECT COUNT(*) as count FROM results";
+        $params = [];
+        if ($status && $status !== 'all') {
+            $sql .= " WHERE status = ?";
+            $params[] = $status;
+        }
+        $row = $this->db->fetchOne($sql, $params);
+        return (int)($row['count'] ?? 0);
     }
 
     public function create($data) {

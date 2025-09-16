@@ -8,6 +8,49 @@ class Job {
         $this->db = getDB();
     }
 
+    // Admin listings: include drafts and allow filtering by status and category slug
+    public function getAllAdmin($limit = 15, $offset = 0, $categorySlug = null, $status = 'all'): array {
+        $sql = "SELECT j.*, c.name as category_name, c.slug as category_slug 
+                FROM jobs j 
+                LEFT JOIN categories c ON j.category_id = c.id ";
+        $where = [];
+        $params = [];
+        if ($status && $status !== 'all') {
+            $where[] = "j.status = ?";
+            $params[] = $status;
+        }
+        if ($categorySlug) {
+            $where[] = "c.slug = ?";
+            $params[] = $categorySlug;
+        }
+        if ($where) {
+            $sql .= " WHERE " . implode(' AND ', $where);
+        }
+        $sql .= " ORDER BY COALESCE(j.published_at, j.updated_at, j.created_at) DESC LIMIT ? OFFSET ?";
+        $params[] = $limit;
+        $params[] = $offset;
+        return $this->db->fetchAll($sql, $params);
+    }
+
+    public function getCountAdmin($categorySlug = null, $status = 'all'): int {
+        $sql = "SELECT COUNT(*) as count FROM jobs j LEFT JOIN categories c ON j.category_id = c.id";
+        $where = [];
+        $params = [];
+        if ($status && $status !== 'all') {
+            $where[] = "j.status = ?";
+            $params[] = $status;
+        }
+        if ($categorySlug) {
+            $where[] = "c.slug = ?";
+            $params[] = $categorySlug;
+        }
+        if ($where) {
+            $sql .= " WHERE " . implode(' AND ', $where);
+        }
+        $row = $this->db->fetchOne($sql, $params);
+        return (int)($row['count'] ?? 0);
+    }
+
     public function getAll($limit = 15, $offset = 0, $category = null): array {
         $sql = "SELECT j.*, c.name as category_name, c.slug as category_slug 
                 FROM jobs j 

@@ -123,7 +123,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $admitCardModel->saveFaqs($id, $faqs);
 
-            $success = 'Admit card updated successfully!';
             // Refresh admit card data
             $admitCard = $admitCardModel->getById($id);
             // If transitioned to published and opted-in, send push
@@ -136,6 +135,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ];
                 try { onesignal_notify_admit($admitForNotif); } catch (Exception $e) { /* ignore */ }
             }
+            // PRG: redirect to list to avoid duplicate submission on refresh
+            redirect('admit-cards.php?updated=1');
+            // Unreachable after redirect; kept for clarity
+            $success = 'Admit card updated successfully!';
         } catch (Throwable $e) {
             $error = 'Update failed: ' . htmlspecialchars($e->getMessage());
         }

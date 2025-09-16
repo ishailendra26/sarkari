@@ -123,7 +123,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $resultModel->saveSections($newId, $sections);
         $resultModel->saveFaqs($newId, $faqs);
 
-        $success = 'Result added successfully!';
         if ($send_push && $status === 'published') {
             $resultForNotif = [
                 'title' => $title,
@@ -133,9 +132,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ];
             try { onesignal_notify_result($resultForNotif); } catch (Exception $e) { /* ignore */ }
         }
-        
-        // Clear form
-        $_POST = [];
+        // Redirect (PRG) to results list
+        redirect('results.php?saved=1');
+        // Unreachable after redirect
+        $success = 'Result added successfully!';
         } catch (Throwable $e) {
             $error = 'Creation failed: ' . htmlspecialchars($e->getMessage());
         }

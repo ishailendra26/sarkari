@@ -16,7 +16,7 @@ include __DIR__ . '/../includes/header.php';
 
     <div class="bg-gray-50 rounded-xl p-6 border border-gray-200">
       <ul class="space-y-3 text-gray-700">
-        <li class="flex items-center gap-2"><i class="fas fa-envelope text-primary"></i> <span>Email: info@sarkarijobs.com</span></li>
+        <li class="flex items-center gap-2"><i class="fas fa-envelope text-primary"></i> <span>Email: <a href="mailto:examsz.in@gmail.com">examsz.in@gmail.com</a></span></li>
         <li class="flex items-center gap-2"><i class="fab fa-telegram text-[#229ED9]"></i> <a class="text-primary hover:underline" href="<?= htmlspecialchars(TELEGRAM_URL) ?>" target="_blank" rel="noopener">Join Telegram</a></li>
         <li class="flex items-center gap-2"><i class="fab fa-whatsapp text-[#25D366]"></i> <a class="text-primary hover:underline" href="<?= htmlspecialchars(WHATSAPP_URL) ?>" target="_blank" rel="noopener">Join WhatsApp</a></li>
       </ul>

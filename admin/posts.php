@@ -13,14 +13,17 @@ $categoryModel = new Category();
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $search = isset($_GET['search']) ? sanitizeInput($_GET['search']) : null;
 $category = isset($_GET['category']) ? sanitizeInput($_GET['category']) : null;
+$status = isset($_GET['status']) ? sanitizeInput($_GET['status']) : 'all';
 
 if ($search) {
-    // Simple search using title/content via model search
+    // Simple search using title/content via model search (published only)
     $posts = $postModel->search($search, POSTS_PER_PAGE ?? 15, ($page - 1) * (POSTS_PER_PAGE ?? 15));
-    $totalPosts = $postModel->getCount($category); // fallback count by category only
+    $totalPosts = $postModel->countSearch($search);
 } else {
-    $posts = $postModel->getAll(POSTS_PER_PAGE ?? 15, ($page - 1) * (POSTS_PER_PAGE ?? 15), $category);
-    $totalPosts = $postModel->getCount($category);
+    // Admin-inclusive listing
+    $perPage = POSTS_PER_PAGE ?? 15;
+    $posts = $postModel->getAllAdmin($perPage, ($page - 1) * $perPage, $category, $status);
+    $totalPosts = $postModel->getCountAdmin($category, $status);
 }
 
 $perPage = POSTS_PER_PAGE ?? 15;
@@ -43,6 +46,16 @@ $pageTitle = 'Manage Posts';
 $currentPage = 'posts';
 include 'includes/header.php';
 ?>
+        <?php if (isset($_GET['saved'])): ?>
+        <div class="alert alert-success mb-6">
+            <i class="fas fa-check-circle mr-2"></i>Post saved successfully
+        </div>
+        <?php endif; ?>
+        <?php if (isset($_GET['updated'])): ?>
+        <div class="alert alert-success mb-6">
+            <i class="fas fa-check-circle mr-2"></i>Post updated successfully
+        </div>
+        <?php endif; ?>
         <?php if (isset($_GET['deleted'])): ?>
         <div class="alert alert-success mb-6">
             <i class="fas fa-check-circle mr-2"></i>Post deleted successfully
@@ -63,6 +76,13 @@ include 'includes/header.php';
                             <?= htmlspecialchars($cat['name']) ?>
                         </option>
                         <?php endforeach; ?>
+                    </select>
+                </div>
+                <div>
+                    <select id="status-filter" class="form-input">
+                        <option value="all" <?= $status === 'all' ? 'selected' : '' ?>>All Statuses</option>
+                        <option value="published" <?= $status === 'published' ? 'selected' : '' ?>>Published</option>
+                        <option value="draft" <?= $status === 'draft' ? 'selected' : '' ?>>Draft</option>
                     </select>
                 </div>
                 <div>
@@ -182,10 +202,12 @@ include 'includes/header.php';
         function applyFilters() {
             const search = document.getElementById('search-input').value;
             const category = document.getElementById('category-filter').value;
+            const status = document.getElementById('status-filter').value;
             let url = 'posts.php';
             const params = [];
             if (search) params.push('search=' + encodeURIComponent(search));
             if (category) params.push('category=' + encodeURIComponent(category));
+            if (status) params.push('status=' + encodeURIComponent(status));
             if (params.length) url += '?' + params.join('&');
             window.location.href = url;
         }

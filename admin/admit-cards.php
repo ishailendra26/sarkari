@@ -10,13 +10,14 @@ $admitCardModel = new AdmitCard();
 
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $search = isset($_GET['search']) ? sanitizeInput($_GET['search']) : null;
+$status = isset($_GET['status']) ? sanitizeInput($_GET['status']) : 'all';
 
 if ($search) {
     $admitCards = $admitCardModel->search($search, JOBS_PER_PAGE, ($page - 1) * JOBS_PER_PAGE);
     $totalAdmitCards = count($admitCardModel->search($search, 1000, 0));
 } else {
-    $admitCards = $admitCardModel->getAll(JOBS_PER_PAGE, ($page - 1) * JOBS_PER_PAGE);
-    $totalAdmitCards = $admitCardModel->getCount();
+    $admitCards = $admitCardModel->getAllAdmin(JOBS_PER_PAGE, ($page - 1) * JOBS_PER_PAGE, $status);
+    $totalAdmitCards = $admitCardModel->getCountAdmin($status);
 }
 
 $pagination = paginate($totalAdmitCards, $page, JOBS_PER_PAGE);
@@ -36,6 +37,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 $pageTitle = 'Manage Admit Cards';
 include 'includes/header.php';
 ?>
+        <?php if (isset($_GET['saved'])): ?>
+        <div class="alert alert-success mb-6">
+            <i class="fas fa-check-circle mr-2"></i>Admit card saved successfully
+        </div>
+        <?php endif; ?>
+        <?php if (isset($_GET['updated'])): ?>
+        <div class="alert alert-success mb-6">
+            <i class="fas fa-check-circle mr-2"></i>Admit card updated successfully
+        </div>
+        <?php endif; ?>
         <?php if (isset($_GET['deleted'])): ?>
         <div class="alert alert-success mb-6">
             <i class="fas fa-check-circle mr-2"></i>Admit card deleted successfully
@@ -53,6 +64,13 @@ include 'includes/header.php';
                     <button onclick="applySearch()" class="btn btn-primary">
                         <i class="fas fa-search mr-2"></i>Search
                     </button>
+                </div>
+                <div>
+                    <select id="status-filter" class="form-input">
+                        <option value="all" <?= $status === 'all' ? 'selected' : '' ?>>All Statuses</option>
+                        <option value="published" <?= $status === 'published' ? 'selected' : '' ?>>Published</option>
+                        <option value="draft" <?= $status === 'draft' ? 'selected' : '' ?>>Draft</option>
+                    </select>
                 </div>
             </div>
         </div>
@@ -199,10 +217,17 @@ include 'includes/header.php';
     <script>
         function applySearch() {
             const search = document.getElementById('search-input').value;
+            const status = document.getElementById('status-filter').value;
             let url = 'admit-cards.php';
-            
+            const params = [];
             if (search) {
-                url += '?search=' + encodeURIComponent(search);
+                params.push('search=' + encodeURIComponent(search));
+            }
+            if (status) {
+                params.push('status=' + encodeURIComponent(status));
+            }
+            if (params.length) {
+                url += '?' + params.join('&');
             }
             
             window.location.href = url;

@@ -23,6 +23,8 @@ include __DIR__ . '/../includes/header.php';
     </p>
     <p class="text-gray-700 leading-relaxed">
       For feedback and partnerships, feel free to reach out via our Contact page.
+      <br>
+      Email: <a href="mailto:examsz.in@gmail.com">examsz.in@gmail.com</a>
     </p>
   </div>
 </section>

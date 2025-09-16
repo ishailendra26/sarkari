@@ -46,8 +46,8 @@ try {
     error_log("Homepage database error: " . $e->getMessage());
 }
 
-$pageTitle = "Latest Government Jobs, Results & Admit Cards";
-$metaDescription = "Find the latest Sarkari jobs, exam results, admit cards, and exam syllabus in one place. Daily updates, category-wise filters, and SEO-friendly links for quick access to opportunities.";
+$pageTitle = "Examsz- Your Exam Success Partner |Latest Government Jobs, Results & Admit Cards";
+$metaDescription = "Find Sarkari Result, exam notifications, admit cards, and all government job updates quickly at Examsz.in.";
 $metaKeywords = "sarkari jobs, government jobs, exam results, admit cards, syllabus, latest jobs, sarkari result, rojgar";
 $hideHeaderSearch = false;
 

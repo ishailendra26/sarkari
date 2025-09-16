@@ -140,7 +140,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 catch (Throwable $ex) { error_log('add-admit saveFaqs error: ' . $ex->getMessage()); }
             }
 
-            $success = 'Admit card added successfully!';
             if ($send_push && $status === 'published') {
                 $admitForNotif = [
                     'title' => $title,
@@ -150,8 +149,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ];
                 try { onesignal_notify_admit($admitForNotif); } catch (Exception $e) { /* ignore */ }
             }
-            // Clear form
-            $_POST = [];
+            // PRG redirect to admit-cards list
+            redirect('admit-cards.php?saved=1');
+            // Unreachable after redirect
+            $success = 'Admit card added successfully!';
         } else {
             if (!$error) {
                 $error = 'Failed to add admit card';
