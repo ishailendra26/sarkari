@@ -74,14 +74,14 @@ if (!empty($events)) {
         $extras['Events & Timeline'] = $eventItems;
     }
 }
-// FAQs (render as simple Q/A lines)
+// FAQs (structured for accordion)
 $faqs = $resultModel->getFaqs((int)$result['id']);
 if (!empty($faqs)) {
     $faqItems = [];
     foreach ($faqs as $f) {
         $q = trim($f['question'] ?? '');
-        $a = trim(strip_tags($f['answer'] ?? ''));
-        if ($q || $a) { $faqItems[] = ($q ? 'Q: ' . $q : '') . ($a ? ' — A: ' . $a : ''); }
+        $a = trim($f['answer'] ?? '');
+        if ($q || $a) { $faqItems[] = ['q' => $q, 'a' => $a]; }
     }
     if (!empty($faqItems)) {
         $extras['FAQs'] = $faqItems;
@@ -196,6 +196,8 @@ include 'includes/header.php';
                             </button>
                         </div>
                     </div>
+
+                    <?php include __DIR__ . '/includes/community-cta.php'; ?>
 
                     <?php [$scope, $slugScope] = inferPageScopeFromRequest(); ?>
                     <?php $inContent = renderAd('in_content', $scope, $slugScope, 1); if ($inContent): ?>

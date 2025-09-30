@@ -76,8 +76,8 @@ $faqs = $admitModel->getFaqs((int)$admit['id']);
 if (!empty($faqs)) {
     foreach ($faqs as $f) {
         $q = trim($f['question'] ?? '');
-        $a = trim(strip_tags($f['answer'] ?? ''));
-        if ($q || $a) { $faqItems[] = ($q ? 'Q: ' . $q : '') . ($a ? ' — A: ' . $a : ''); }
+        $a = trim($f['answer'] ?? '');
+        if ($q || $a) { $faqItems[] = ['q' => $q, 'a' => $a]; }
     }
 }
 
@@ -167,6 +167,8 @@ include 'includes/header.php';
                             </button>
                         </div>
                     </div>
+
+                    <?php include __DIR__ . '/includes/community-cta.php'; ?>
 
                     <?php if (!empty(trim(strip_tags($admit['description'] ?? '')))): ?>
                     <div class="prose max-w-none text-gray-800 leading-relaxed mb-8">

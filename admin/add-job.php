@@ -411,6 +411,9 @@ include 'includes/header.php';
                         <div class="grid grid-cols-3 gap-2 link_row">
                           <select name="links[label][]" class="form-input">
                             <option value="Apply Online">Apply Online</option>
+                            <option value="Admit Card Download">Admit Card Download</option>
+                            <option value="Answer Key Download">Answer Key Download</option>
+                            <option value="Result Download">Result Download</option>
                             <option value="Download Notification">Download Notification</option>
                             <option value="Official Website">Official Website</option>
                             <option value="Other">Other</option>

@@ -388,12 +388,47 @@ function renderExtras($extras) {
         $title = htmlspecialchars($sectionTitle);
         $icon = $iconFor($sectionTitle);
         ?>
-        <div class="mb-6">
-            <h2 class="text-xl font-bold text-gray-800 mb-3 flex items-center">
+        <div class="mb-6 section-card">
+            <h2 class="text-xl font-bold text-gray-800 mb-3 flex items-center section-title">
                 <i class="fas <?= $icon ?> text-primary mr-2"></i><?= $title ?>
             </h2>
             <div class="text-gray-700">
                 <?php if (is_array($content)):
+                    // Special handling for FAQs: array of {q, a}
+                    $isFaqSection = (stripos((string)$sectionTitle, 'faq') !== false);
+                    // Age Limit: force non-table rendering
+                    $isAgeSection = (stripos((string)$sectionTitle, 'age limit') !== false) || (trim(strtolower((string)$sectionTitle)) === 'age');
+                    $looksLikeFaqItems = false;
+                    if ($isFaqSection && !empty($content)) {
+                        $first = reset($content);
+                        $looksLikeFaqItems = is_array($first) && (isset($first['q']) || isset($first['a']));
+                    }
+                    if ($isFaqSection && $looksLikeFaqItems): ?>
+                        <div class="space-y-3">
+                            <?php foreach ($content as $idx => $qa): ?>
+                                <?php 
+                                    if (!is_array($qa)) continue; 
+                                    $q = trim((string)($qa['q'] ?? ''));
+                                    $aRaw = (string)($qa['a'] ?? '');
+                                    $aSafe = preg_match('/<\w+[^>]*>/', $aRaw) 
+                                        ? strip_tags($aRaw, '<p><br><strong><em><b><i><u><ol><ul><li><h1><h2><h3><h4><span><a>') 
+                                        : nl2br(htmlspecialchars($aRaw));
+                                ?>
+                                <details class="border border-gray-200 rounded-lg overflow-hidden bg-white">
+                                    <summary class="cursor-pointer flex items-center justify-between px-4 py-3 font-medium text-gray-800 hover:bg-gray-50">
+                                        <span class="flex items-start gap-2">
+                                            <i class="fas fa-question-circle text-primary mt-0.5"></i>
+                                            <span><?= htmlspecialchars($q ?: 'Question') ?></span>
+                                        </span>
+                                        <i class="fas fa-chevron-down text-gray-500 transition-transform duration-200 rotate-on-open"></i>
+                                    </summary>
+                                    <div class="px-4 pb-4 text-gray-700 leading-relaxed">
+                                        <?= $aSafe ?>
+                                    </div>
+                                </details>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php else:
                     // Detect array of link objects {label, url}
                     $isLinks = false;
                     if (!empty($content)) {
@@ -403,36 +438,20 @@ function renderExtras($extras) {
 
                     // Detect if items are strings with pipe separators to render as table
                     $hasPipe = false;
-                    if (!$isLinks) {
+                    if (!$isLinks && !$isAgeSection) {
                         foreach ($content as $it) { if (is_string($it) && strpos($it, '|') !== false) { $hasPipe = true; break; } }
                     }
                 ?>
                     <?php if ($isLinks): ?>
-                      <div class="overflow-x-auto">
-                        <table class="min-w-full border border-gray-200 rounded-lg overflow-hidden">
-                          <thead class="bg-gray-50">
-                            <tr>
-                              <th class="px-4 py-2 text-left text-gray-700 font-semibold">Label</th>
-                              <th class="px-4 py-2 text-left text-gray-700 font-semibold">Action</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <?php foreach ($content as $item): ?>
-                              <?php if (is_array($item) && isset($item['url'])): ?>
-                              <tr class="border-t">
-                                <td class="px-4 py-2 text-gray-800">
-                                  <?= htmlspecialchars($item['label'] ?? $item['url']) ?>
-                                </td>
-                                <td class="px-4 py-2">
-                                  <a href="<?= htmlspecialchars($item['url']) ?>" target="_blank" class="inline-flex items-center gap-2 text-primary hover:underline">
-                                    <i class="fas fa-external-link-alt"></i> Open
-                                  </a>
-                                </td>
-                              </tr>
-                              <?php endif; ?>
-                            <?php endforeach; ?>
-                          </tbody>
-                        </table>
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <?php foreach ($content as $item): ?>
+                          <?php if (is_array($item) && isset($item['url'])): ?>
+                            <a href="<?= htmlspecialchars($item['url']) ?>" target="_blank" class="link-btn">
+                              <i class="fas fa-external-link-alt mr-2"></i>
+                              <?= htmlspecialchars($item['label'] ?? $item['url']) ?>
+                            </a>
+                          <?php endif; ?>
+                        <?php endforeach; ?>
                       </div>
                     <?php elseif ($hasPipe): ?>
                       <div class="overflow-x-auto">
@@ -470,13 +489,13 @@ function renderExtras($extras) {
                         <?php endforeach; ?>
                       </ul>
                     <?php endif; ?>
+                    <?php endif; // end inner FAQ conditional ?>
                 <?php else: ?>
                     <?php
                         $raw = (string)$content;
-                        // If it looks like HTML, allow a safe subset of tags; otherwise, escape
+                        // Default rendering: preserve original formatting with safe HTML subset
                         if (preg_match('/<\w+[^>]*>/', $raw)) {
-                            // Allowed tags: paragraphs, line breaks, emphasis, lists, simple headings, span
-                            $allowedTags = '<p><br><strong><em><b><i><u><ol><ul><li><h1><h2><h3><h4><span>'; 
+                            $allowedTags = '<p><br><strong><em><b><i><u><ol><ul><li><h1><h2><h3><h4><span><a>';
                             $safe = strip_tags($raw, $allowedTags);
                             echo $safe;
                         } else {

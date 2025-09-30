@@ -119,7 +119,6 @@ if (!empty($sections)) {
         }
     }
 }
-
 // Links -> Important Link
 $links = $jobModel->getLinks((int)$job['id']);
 if (!empty($links)) {
@@ -136,8 +135,10 @@ $faqs = $jobModel->getFaqs((int)$job['id']);
 if (!empty($faqs)) {
     foreach ($faqs as $f) {
         $q = trim($f['question'] ?? '');
-        $a = trim(strip_tags($f['answer'] ?? ''));
-        if ($q || $a) { $faqItems[] = ($q ? 'Q: ' . $q : '') . ($a ? ' — A: ' . $a : ''); }
+        $a = trim($f['answer'] ?? '');
+        if ($q || $a) {
+            $faqItems[] = ['q' => $q, 'a' => $a];
+        }
     }
 }
 
@@ -231,6 +232,8 @@ include 'includes/header.php';
                                 </button>
                             </div>
                         </div>
+
+                        <?php include __DIR__ . '/includes/community-cta.php'; ?>
 
                         <?php [$scope, $slugScope] = inferPageScopeFromRequest(); ?>
                         <?php $inContent = renderAd('in_content', $scope, $slugScope, 1); if ($inContent): ?>

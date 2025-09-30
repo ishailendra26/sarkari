@@ -430,7 +430,7 @@ include 'includes/header.php';
                         <?php if (!empty($links)): foreach ($links as $l): ?>
                         <div class="grid grid-cols-3 gap-2 link_row">
                           <select name="links[label][]" class="form-input">
-                            <?php $labOpts=['Apply Online','Download Notification','Official Website','Other']; $sel=htmlspecialchars($l['label']); foreach($labOpts as $o): ?>
+                            <?php $labOpts=['Apply Online','Admit Card Download','Answer Key Download','Result Download','Download Notification','Official Website','Other']; $sel=htmlspecialchars($l['label']); foreach($labOpts as $o): ?>
                             <option value="<?= $o ?>" <?= $sel===$o?'selected':'' ?>><?= $o ?></option>
                             <?php endforeach; ?>
                           </select>
@@ -441,6 +441,9 @@ include 'includes/header.php';
                         <div class="grid grid-cols-3 gap-2 link_row">
                           <select name="links[label][]" class="form-input">
                             <option value="Apply Online">Apply Online</option>
+                            <option value="Admit Card Download">Admit Card Download</option>
+                            <option value="Answer Key Download">Answer Key Download</option>
+                            <option value="Result Download">Result Download</option>
                             <option value="Download Notification">Download Notification</option>
                             <option value="Official Website">Official Website</option>
                             <option value="Other">Other</option>
