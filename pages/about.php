@@ -13,7 +13,7 @@ include __DIR__ . '/../includes/header.php';
   <div class="container mx-auto px-4 max-w-4xl">
     <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">About Us</h1>
     <p class="text-gray-700 leading-relaxed mb-4">
-      SarkariJobs Portal is dedicated to providing timely and accurate updates on government job notifications,
+      Examsz.in - Your Exam Success Partner Portal is dedicated to providing timely and accurate updates on government job notifications,
       exam results, admit cards, and exam syllabus. Our goal is to simplify access to official information with
       a clean and user-friendly interface.
     </p>

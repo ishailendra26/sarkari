@@ -12,7 +12,7 @@ include __DIR__ . '/../includes/header.php';
 <section class="py-12 bg-white">
   <div class="container mx-auto px-4 max-w-5xl">
     <div class="mb-8">
-      <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Connect with SarkariJobs</h1>
+      <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Connect with Examsz</h1>
       <p class="mt-2 text-gray-600">Follow us to never miss updates on government jobs, results, admit cards, and syllabus.</p>
     </div>
 
