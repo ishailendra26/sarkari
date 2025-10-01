@@ -10,9 +10,9 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <div>
                     <div class="mb-4">
-                        <img src="<?= SITE_URL ?>/assets/images/ExamszWhite.svg" alt="SarkariJobs" class="h-8 w-auto opacity-95">
+                        <img src="<?= SITE_URL ?>/assets/images/ExamszWhite.svg" alt="SarkariJobs" class="h-8 w-auto opacity-95" loading="lazy" decoding="async">
                     </div>
-                    <p class="text-gray-400 mb-4">Your trusted source for latest government job notifications, results, and exam updates.</p>
+                    <p class="text-gray-400 mb-4">Examsz - Your trusted source for latest government job notifications, results, and exam updates.</p>
                     <div class="flex space-x-4">
                         <a href="https://facebook.com/examsz" class="text-gray-400 hover:text-white"><i class="fab fa-facebook"></i></a>
                         <a href="https://x.com/examszin" class="text-gray-400 hover:text-white"><i class="fab fa-twitter"></i></a>
@@ -50,7 +50,7 @@
                     <h4 class="text-lg font-semibold mb-4">Contact</h4>
                     <ul class="space-y-2 text-gray-400">
                         <li><i class="fas fa-envelope mr-2"></i>contact@examsz.in</li>
-                        <li><i class="fas fa-phone mr-2"></i>+91 8418001111</li>
+                        <li><i class="fas fa-phone mr-2"></i>+91 8418001126</li>
                         <li><i class="fas fa-map-marker-alt mr-2"></i>India</li>
                     </ul>
                 </div>
@@ -63,7 +63,7 @@
     </footer>
 
     <!-- JavaScript -->
-    <script src="<?= SITE_URL ?>/assets/js/main.js"></script>
+    <script defer src="<?= SITE_URL ?>/assets/js/app.min.js"></script>
     
     <?php if (isset($additionalScripts)): ?>
     <?= $additionalScripts ?>

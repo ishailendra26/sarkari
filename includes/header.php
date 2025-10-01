@@ -8,6 +8,11 @@
     <?php if (isset($metaKeywords)): ?>
     <meta name="keywords" content="<?= $metaKeywords ?>">
     <?php endif; ?>
+    <!-- Performance: Preconnects to critical third-party origins -->
+    <link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.onesignal.com" crossorigin>
+    <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossorigin>
     
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="<?= SITE_URL ?>/assets/images/Examszfevicon.png">
@@ -16,30 +21,35 @@
     <!-- Sitemap discovery -->
     <link rel="sitemap" type="application/xml" title="Sitemap" href="<?= SITE_URL ?>/sitemap.xml.php">
     
-    <!-- Tailwind CSS with Typography plugin for .prose support -->
-    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#1e40af',
-                        secondary: '#dc2626',
-                        accent: '#059669'
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Tailwind CSS: prefer local build if available to avoid runtime cost -->
+    <?php if (file_exists(__DIR__ . '/../assets/css/tailwind.min.css')): ?>
+      <link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/tailwind.min.css">
+    <?php else: ?>
+      <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+      <script>
+          tailwind.config = {
+              theme: {
+                  extend: {
+                      colors: {
+                          primary: '#1e40af',
+                          secondary: '#dc2626',
+                          accent: '#059669'
+                      }
+                  }
+              }
+          }
+      </script>
+    <?php endif; ?>
     
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Font Awesome (non-blocking load) -->
+    <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
     
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/style.css">
+    <link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/style.min.css">
     
     <?php
-    // OneSignal SDK (render only when enabled and configured)
+    // OneSignal SDK (render only when enabled and configured) — defer init to idle to reduce TBT
     if (function_exists('getSetting') && (int)getSetting('onesignal_enabled', 0) === 1) {
         $osAppId = getSetting('onesignal_app_id');
         if (!empty($osAppId)) {
@@ -52,34 +62,45 @@
             $swPath = $scopePath . 'OneSignalSDKWorker.js';
             $swUpdaterPath = $scopePath . 'OneSignalSDKUpdaterWorker.js';
             ?>
-            <script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async></script>
             <script>
-                window.OneSignalDeferred = window.OneSignalDeferred || [];
-                OneSignalDeferred.push(function(OneSignal) {
-                    OneSignal.init({
-                        appId: "<?= htmlspecialchars($osAppId) ?>",
-                        <?php if (!empty($osSafariId)): ?>
-                        safari_web_id: "<?= htmlspecialchars($osSafariId) ?>",
-                        <?php endif; ?>
-                        notifyButton: { enable: true },
-                        serviceWorkerParam: { scope: "<?= $scopePath ?>" },
-                        serviceWorkerPath: "<?= $swPath ?>",
-                        serviceWorkerUpdaterPath: "<?= $swUpdaterPath ?>",
-                        <?php if (!empty($osSubdomain)): ?>
-                        subdomainName: "<?= htmlspecialchars($osSubdomain) ?>",
-                        <?php endif; ?>
-                    });
-
-                    // Auto show the slidedown permission prompt if not subscribed yet
-                    OneSignal.User.PushSubscription.getOptedIn().then(function(optedIn){
-                        if (!optedIn) {
-                            // Gracefully try the modern slidedown; ignore if unavailable
-                            if (OneSignal.Slidedown && OneSignal.Slidedown.promptPush) {
-                                OneSignal.Slidedown.promptPush();
+                (function(){
+                  function loadOS(){
+                    var s=document.createElement('script');
+                    s.src='https://cdn.onesignal.com/sdks/OneSignalSDK.js';
+                    s.async=true;
+                    s.onload=function(){
+                      window.OneSignalDeferred = window.OneSignalDeferred || [];
+                      OneSignalDeferred.push(function(OneSignal){
+                        OneSignal.init({
+                          appId: "<?= htmlspecialchars($osAppId) ?>",
+                          <?php if (!empty($osSafariId)): ?>
+                          safari_web_id: "<?= htmlspecialchars($osSafariId) ?>",
+                          <?php endif; ?>
+                          notifyButton: { enable: true },
+                          serviceWorkerParam: { scope: "<?= $scopePath ?>" },
+                          serviceWorkerPath: "<?= $swPath ?>",
+                          serviceWorkerUpdaterPath: "<?= $swUpdaterPath ?>",
+                          <?php if (!empty($osSubdomain)): ?>
+                          subdomainName: "<?= htmlspecialchars($osSubdomain) ?>",
+                          <?php endif; ?>
+                        });
+                        if (OneSignal && OneSignal.User && OneSignal.User.PushSubscription) {
+                          OneSignal.User.PushSubscription.getOptedIn().then(function(optedIn){
+                            if (!optedIn && OneSignal.Slidedown && OneSignal.Slidedown.promptPush) {
+                              OneSignal.Slidedown.promptPush();
                             }
+                          });
                         }
-                    });
-                });
+                      });
+                    };
+                    document.head.appendChild(s);
+                  }
+                  if ('requestIdleCallback' in window) {
+                    requestIdleCallback(loadOS, { timeout: 4000 });
+                  } else {
+                    setTimeout(loadOS, 3000);
+                  }
+                })();
             </script>
             <?php
         }
@@ -108,8 +129,23 @@
     <script type="application/ld+json">
       <?= json_encode($websiteSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) ?>
     </script>
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3803763924146690"
-     crossorigin="anonymous"></script>
+    <!-- Defer loading AdSense to idle to reduce TBT -->
+    <script>
+      (function(){
+        function loadAds(){
+          var s=document.createElement('script');
+          s.async=true;
+          s.src='https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3803763924146690';
+          s.crossOrigin='anonymous';
+          document.head.appendChild(s);
+        }
+        if ('requestIdleCallback' in window) {
+          requestIdleCallback(loadAds, { timeout: 4000 });
+        } else {
+          setTimeout(loadAds, 3000);
+        }
+      })();
+    </script>
 </head>
 <body class="bg-gray-50">
     <!-- Header -->
@@ -118,7 +154,7 @@
             <div class="flex items-center justify-between">
                 <div class="flex items-center">
                     <a href="<?= SITE_URL ?>" aria-label="SarkariJobs Home" class="flex items-center group">
-                        <img src="<?= SITE_URL ?>/assets/images/ExamszBlack.svg" alt="SarkariJobs" class="h-9 md:h-10 w-auto drop-shadow-sm transition-transform duration-200 group-hover:scale-[1.02]">
+                        <img src="<?= SITE_URL ?>/assets/images/ExamszBlack.svg" alt="SarkariJobs" class="h-9 md:h-10 w-auto drop-shadow-sm transition-transform duration-200 group-hover:scale-[1.02]" decoding="async" fetchpriority="high">
                         <!-- Mobile-only concise tagline -->
                         <div class="ml-2 leading-tight sm:hidden">
                             <div class="text-[10px] text-gray-600">

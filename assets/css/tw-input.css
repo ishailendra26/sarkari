@@ -1,0 +1,6 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Optional: project-level tweaks can live here */
+.prose img { margin: 0; }
