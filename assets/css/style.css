@@ -9,6 +9,12 @@
     overflow: hidden;
 }
 
+/* Performance: defer rendering of offscreen content */
+.cv-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: 1px 800px; /* reserve space to avoid CLS */
+}
+
 /* Accordion chevron rotation for <details> elements */
 details[open] .rotate-on-open {
     transform: rotate(180deg);

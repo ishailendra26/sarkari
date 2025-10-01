@@ -90,8 +90,8 @@ include 'includes/header.php';
     <!-- Hero Section -->
     <section class="relative overflow-hidden bg-gradient-to-br from-primary via-blue-700 to-blue-600 text-white py-14 md:py-24">
         <div class="absolute inset-0 opacity-20 pointer-events-none" aria-hidden="true">
-            <div class="w-[48rem] h-[48rem] bg-white rounded-full blur-3xl -top-40 -left-40 absolute"></div>
-            <div class="w-[42rem] h-[42rem] bg-cyan-300 rounded-full blur-3xl -bottom-40 -right-40 absolute"></div>
+            <div class="hidden md:block w-[48rem] h-[48rem] bg-white rounded-full blur-xl -top-40 -left-40 absolute"></div>
+            <div class="hidden md:block w-[42rem] h-[42rem] bg-cyan-300 rounded-full blur-xl -bottom-40 -right-40 absolute"></div>
         </div>
         <div class="container mx-auto px-4 relative">
             <div class="text-center max-w-3xl mx-auto">
@@ -109,7 +109,7 @@ include 'includes/header.php';
 
             <div class="max-w-5xl mx-auto mt-8 md:mt-10">
                 <!-- Glass search card -->
-                <div class="rounded-2xl bg-white/20 supports-[backdrop-filter]:backdrop-blur-xl p-4 md:p-6 shadow-2xl ring-1 ring-white/30">
+                <div class="rounded-2xl bg-white/20 md:supports-[backdrop-filter]:backdrop-blur-md p-4 md:p-6 shadow-2xl ring-1 ring-white/30">
                     <div role="search" aria-label="Site search" class="grid grid-cols-1 md:grid-cols-[minmax(160px,220px)_1fr_auto] gap-2 sm:gap-3 md:gap-4 items-stretch">
                         <!-- Category Select (keep ID for JS) -->
                         <div>

@@ -45,11 +45,11 @@
     <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
     
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/style.min.css">
+    <!-- Custom CSS (use non-minified to avoid syntax issue, size is small) -->
+    <link rel="stylesheet" href="<?= SITE_URL ?>/assets/css/style.css">
     
     <?php
-    // OneSignal SDK (render only when enabled and configured) — defer init to idle to reduce TBT
+    // OneSignal SDK (render only when enabled and configured) — defer init further on mobile
     if (function_exists('getSetting') && (int)getSetting('onesignal_enabled', 0) === 1) {
         $osAppId = getSetting('onesignal_app_id');
         if (!empty($osAppId)) {
@@ -64,6 +64,16 @@
             ?>
             <script>
                 (function(){
+                  function isMobile(){
+                    return window.matchMedia && window.matchMedia('(max-width: 767px)').matches;
+                  }
+                  function onFirstInteraction(cb){
+                    var done=false;
+                    function wrap(){ if(done) return; done=true; cb(); document.removeEventListener('touchstart',wrap,{passive:true}); document.removeEventListener('scroll',wrap); document.removeEventListener('click',wrap); }
+                    document.addEventListener('touchstart',wrap,{passive:true, once:true});
+                    document.addEventListener('scroll',wrap,{once:true});
+                    document.addEventListener('click',wrap,{once:true});
+                  }
                   function loadOS(){
                     var s=document.createElement('script');
                     s.src='https://cdn.onesignal.com/sdks/OneSignalSDK.js';
@@ -95,10 +105,19 @@
                     };
                     document.head.appendChild(s);
                   }
-                  if ('requestIdleCallback' in window) {
-                    requestIdleCallback(loadOS, { timeout: 4000 });
+                  // On mobile, wait for first interaction or longer idle
+                  if (isMobile()) {
+                    if ('requestIdleCallback' in window) {
+                      requestIdleCallback(function(){ setTimeout(loadOS, 4000); }, { timeout: 6000 });
+                    }
+                    onFirstInteraction(loadOS);
+                    setTimeout(loadOS, 10000); // ultimate fallback
                   } else {
-                    setTimeout(loadOS, 3000);
+                    if ('requestIdleCallback' in window) {
+                      requestIdleCallback(loadOS, { timeout: 4000 });
+                    } else {
+                      setTimeout(loadOS, 3000);
+                    }
                   }
                 })();
             </script>
@@ -129,9 +148,11 @@
     <script type="application/ld+json">
       <?= json_encode($websiteSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) ?>
     </script>
-    <!-- Defer loading AdSense to idle to reduce TBT -->
+    <!-- Defer loading AdSense further on mobile to reduce TBT -->
     <script>
       (function(){
+        function isMobile(){ return window.matchMedia && window.matchMedia('(max-width: 767px)').matches; }
+        function onFirstInteraction(cb){ var f=false; function w(){ if(f) return; f=true; cb(); document.removeEventListener('touchstart',w,{passive:true}); document.removeEventListener('scroll',w); document.removeEventListener('click',w);} document.addEventListener('touchstart',w,{passive:true, once:true}); document.addEventListener('scroll',w,{once:true}); document.addEventListener('click',w,{once:true}); }
         function loadAds(){
           var s=document.createElement('script');
           s.async=true;
@@ -139,10 +160,18 @@
           s.crossOrigin='anonymous';
           document.head.appendChild(s);
         }
-        if ('requestIdleCallback' in window) {
-          requestIdleCallback(loadAds, { timeout: 4000 });
+        if (isMobile()) {
+          if ('requestIdleCallback' in window) {
+            requestIdleCallback(function(){ setTimeout(loadAds, 5000); }, { timeout: 7000 });
+          }
+          onFirstInteraction(loadAds);
+          setTimeout(loadAds, 12000);
         } else {
-          setTimeout(loadAds, 3000);
+          if ('requestIdleCallback' in window) {
+            requestIdleCallback(loadAds, { timeout: 4000 });
+          } else {
+            setTimeout(loadAds, 3000);
+          }
         }
       })();
     </script>
