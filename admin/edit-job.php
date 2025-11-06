@@ -399,7 +399,12 @@ include 'includes/header.php';
                           <input type="date" name="events[start_date][]" class="form-input" value="<?= htmlspecialchars($e['start_date'] ?? '') ?>">
                           <input type="date" name="events[end_date][]" class="form-input" value="<?= htmlspecialchars($e['end_date'] ?? '') ?>">
                           <input type="text" name="events[notes][]" class="form-input" placeholder="Notes" value="<?= htmlspecialchars($e['notes'] ?? '') ?>">
-                          <input type="number" name="events[sort_order][]" class="form-input" placeholder="#" value="<?= (int)($e['sort_order'] ?? 0) ?>">
+                          <div class="flex gap-2">
+                            <input type="number" name="events[sort_order][]" class="form-input w-20" placeholder="#" value="<?= (int)($e['sort_order'] ?? 0) ?>">
+                            <button type="button" class="btn btn-error delete-row-btn" onclick="deleteRow(this, 'ev_row')">
+                              <i class="fas fa-trash"></i>
+                            </button>
+                          </div>
                         </div>
                         <?php endforeach; else: ?>
                         <div class="grid grid-cols-6 gap-2 ev_row">
@@ -428,18 +433,24 @@ include 'includes/header.php';
                       <h3 class="text-lg font-semibold mb-3">Important Links</h3>
                       <div id="links_wrap" class="space-y-3">
                         <?php if (!empty($links)): foreach ($links as $l): ?>
-                        <div class="grid grid-cols-3 gap-2 link_row">
-                          <select name="links[label][]" class="form-input">
-                            <?php $labOpts=['Apply Online','Admit Card Download','Answer Key Download','Result Download','Download Notification','Official Website','Other']; $sel=htmlspecialchars($l['label']); foreach($labOpts as $o): ?>
-                            <option value="<?= $o ?>" <?= $sel===$o?'selected':'' ?>><?= $o ?></option>
+                        <div class="grid grid-cols-4 gap-2 link_row">
+                          <select name="links[label][]" class="form-input link-label-select" onchange="handleLinkLabelChange(this)">
+                            <?php $labOpts=['Apply Online','Admit Card Download','Answer Key Download','Result Download','Download Notification','Official Website','Other','Custom']; $sel=htmlspecialchars($l['label']); foreach($labOpts as $o): ?>
+                            <option value="<?= $o ?>" <?= $sel===$o || ($o==='Custom' && !in_array($sel, $labOpts))?'selected':'' ?>><?= $o ?></option>
                             <?php endforeach; ?>
                           </select>
+                          <input type="text" name="links[custom_label][]" class="form-input custom-label-input" placeholder="Enter custom label..." value="<?= !in_array($sel, array_slice($labOpts, 0, -1)) ? $sel : '' ?>" style="display: <?= !in_array($sel, array_slice($labOpts, 0, -1)) ? 'block' : 'none' ?>">
                           <input type="url" name="links[url][]" class="form-input" placeholder="https://..." value="<?= htmlspecialchars($l['url'] ?? '') ?>">
-                          <input type="number" name="links[sort_order][]" class="form-input" placeholder="#" value="<?= (int)($l['sort_order'] ?? 0) ?>">
+                          <div class="flex gap-2">
+                            <input type="number" name="links[sort_order][]" class="form-input w-20" placeholder="#" value="<?= (int)($l['sort_order'] ?? 0) ?>">
+                            <button type="button" class="btn btn-error delete-link-btn" onclick="deleteLink(this)">
+                              <i class="fas fa-trash"></i>
+                            </button>
+                          </div>
                         </div>
                         <?php endforeach; else: ?>
-                        <div class="grid grid-cols-3 gap-2 link_row">
-                          <select name="links[label][]" class="form-input">
+                        <div class="grid grid-cols-4 gap-2 link_row">
+                          <select name="links[label][]" class="form-input link-label-select" onchange="handleLinkLabelChange(this)">
                             <option value="Apply Online">Apply Online</option>
                             <option value="Admit Card Download">Admit Card Download</option>
                             <option value="Answer Key Download">Answer Key Download</option>
@@ -447,9 +458,16 @@ include 'includes/header.php';
                             <option value="Download Notification">Download Notification</option>
                             <option value="Official Website">Official Website</option>
                             <option value="Other">Other</option>
+                            <option value="Custom">Custom</option>
                           </select>
+                          <input type="text" name="links[custom_label][]" class="form-input custom-label-input" placeholder="Enter custom label..." style="display: none">
                           <input type="url" name="links[url][]" class="form-input" placeholder="https://...">
-                          <input type="number" name="links[sort_order][]" class="form-input" placeholder="#" value="0">
+                          <div class="flex gap-2">
+                            <input type="number" name="links[sort_order][]" class="form-input w-20" placeholder="#" value="0">
+                            <button type="button" class="btn btn-error delete-link-btn" onclick="deleteLink(this)">
+                              <i class="fas fa-trash"></i>
+                            </button>
+                          </div>
                         </div>
                         <?php endif; ?>
                       </div>
@@ -463,14 +481,19 @@ include 'includes/header.php';
                         <?php if (!empty($fees)): foreach ($fees as $f): ?>
                         <div class="grid grid-cols-5 gap-2 fee_row">
                           <select name="fees[category][]" class="form-input">
-                            <?php $catOpts=['General','OBC','EWS','SC','ST','Female','PH']; $sel=htmlspecialchars($f['category']); foreach($catOpts as $o): ?>
-                            <option value="<?= $o ?>" <?= $sel===$o?'selected':'' ?>><?= $o ?></option>
+                            <?php $catOpts=['General','OBC','EWS','SC','ST','Female','PH','Other']; $sel=htmlspecialchars($f['category']); foreach($catOpts as $o): ?>
+                            <option value="<?= $o ?>" <?= $sel===$o || ($o==='Other' && !in_array($sel, $catOpts))?'selected':'' ?>><?= $o ?></option>
                             <?php endforeach; ?>
                           </select>
+                          <input type="text" name="fees[custom_category][]" class="form-input custom-category-input" placeholder="Enter custom category..." value="<?= !in_array($sel, array_slice($catOpts, 0, -1)) ? $sel : '' ?>" style="display: <?= !in_array($sel, array_slice($catOpts, 0, -1)) ? 'block' : 'none' ?>">
                           <input type="number" step="0.01" name="fees[amount][]" class="form-input" placeholder="Amount" value="<?= htmlspecialchars($f['amount'] ?? '') ?>">
                           <input type="text" name="fees[text][]" class="form-input" placeholder="Text (e.g., Nil)" value="<?= htmlspecialchars($f['text'] ?? '') ?>">
-                          <input type="text" name="fees[mode_notes][]" class="form-input" placeholder="Mode (UPI/NetBanking)" value="<?= htmlspecialchars($f['mode_notes'] ?? '') ?>">
-                          <input type="number" name="fees[sort_order][]" class="form-input" placeholder="#" value="<?= (int)($f['sort_order'] ?? 0) ?>">
+                          <div class="flex gap-2">
+                            <input type="number" name="fees[sort_order][]" class="form-input w-20" placeholder="#" value="<?= (int)($f['sort_order'] ?? 0) ?>">
+                            <button type="button" class="btn btn-error delete-row-btn" onclick="deleteRow(this, 'fee_row')">
+                              <i class="fas fa-trash"></i>
+                            </button>
+                          </div>
                         </div>
                         <?php endforeach; else: ?>
                         <div class="grid grid-cols-5 gap-2 fee_row">
@@ -524,7 +547,12 @@ include 'includes/header.php';
                           <input type="number" name="vacancies[total_posts][]" class="form-input" placeholder="Total" value="<?= htmlspecialchars($v['total_posts'] ?? '') ?>">
                           <input type="text" name="vacancies[eligibility_text][]" class="form-input" placeholder="Eligibility" value="<?= htmlspecialchars($v['eligibility_text'] ?? '') ?>">
                           <input type="text" name="vacancies[pay_scale][]" class="form-input" placeholder="Pay Scale" value="<?= htmlspecialchars($v['pay_scale'] ?? '') ?>">
-                          <input type="number" name="vacancies[sort_order][]" class="form-input" placeholder="#" value="<?= (int)($v['sort_order'] ?? 0) ?>">
+                          <div class="flex gap-2">
+                            <input type="number" name="vacancies[sort_order][]" class="form-input w-20" placeholder="#" value="<?= (int)($v['sort_order'] ?? 0) ?>">
+                            <button type="button" class="btn btn-error delete-row-btn" onclick="deleteRow(this, 'vac_row')">
+                              <i class="fas fa-trash"></i>
+                            </button>
+                          </div>
                         </div>
                         <?php endforeach; else: ?>
                         <div class="grid grid-cols-6 gap-2 vac_row">
@@ -568,9 +596,13 @@ include 'includes/header.php';
                         <div class="grid grid-cols-5 gap-2 faq_row">
                           <input type="text" name="faqs[question][]" class="form-input" placeholder="Question" value="<?= htmlspecialchars($f['question'] ?? '') ?>">
                           <input type="text" name="faqs[answer][]" class="form-input" placeholder="Answer" value="<?= htmlspecialchars($f['answer'] ?? '') ?>">
-                          <input type="number" name="faqs[sort_order][]" class="form-input" placeholder="#" value="<?= (int)($f['sort_order'] ?? 0) ?>">
+                          <div class="flex gap-2">
+                            <input type="number" name="faqs[sort_order][]" class="form-input w-20" placeholder="#" value="<?= (int)($f['sort_order'] ?? 0) ?>">
+                            <button type="button" class="btn btn-error delete-row-btn" onclick="deleteRow(this, 'faq_row')">
+                              <i class="fas fa-trash"></i>
+                            </button>
+                          </div>
                           <label class="inline-flex items-center gap-2"><input type="checkbox" name="faqs[is_active][]" <?= ((int)($f['is_active'] ?? 1)) ? 'checked' : '' ?>> Active</label>
-                          <div></div>
                         </div>
                         <?php endforeach; else: ?>
                         <div class="grid grid-cols-5 gap-2 faq_row">
@@ -596,6 +628,50 @@ include 'includes/header.php';
                     </div>
                 </form>
                 <script>
+                // Handle custom inputs for all sections
+                function handleCustomFieldChange(selectElement, customFieldClass) {
+                    const customInput = selectElement.closest('.grid').querySelector('.' + customFieldClass);
+                    if (selectElement.value === 'Custom' || selectElement.value === 'Other') {
+                        customInput.style.display = 'block';
+                        customInput.required = true;
+                    } else {
+                        customInput.style.display = 'none';
+                        customInput.required = false;
+                        customInput.value = '';
+                    }
+                }
+
+                // Handle link label changes
+                function handleLinkLabelChange(selectElement) {
+                    handleCustomFieldChange(selectElement, 'custom-label-input');
+                }
+
+                // Handle category changes
+                function handleCategoryChange(selectElement) {
+                    handleCustomFieldChange(selectElement, 'custom-category-input');
+                }
+
+                // Generic row deletion function
+                function deleteRow(button, rowClass) {
+                    const row = button.closest('.' + rowClass);
+                    const container = row.closest('.space-y-3');
+                    if (container.querySelectorAll('.' + rowClass).length > 1) {
+                        row.remove();
+                    }
+                }
+
+                // Form submit handler for custom labels
+                document.querySelector('form').addEventListener('submit', function(e) {
+                    document.querySelectorAll('.link-label-select').forEach(select => {
+                        if (select.value === 'Custom') {
+                            const customInput = select.closest('.link_row').querySelector('.custom-label-input');
+                            if (customInput.value.trim()) {
+                                select.value = customInput.value.trim();
+                            }
+                        }
+                    });
+                });
+
                 (function(){
                   const fileInput = document.getElementById('thumb_file');
                   const btn = document.getElementById('thumb_upload_btn');
@@ -636,8 +712,32 @@ include 'includes/header.php';
                     const first = wrap.querySelector('.' + rowClass);
                     if (!first) return;
                     const node = first.cloneNode(true);
-                    node.querySelectorAll('input').forEach(i=>{ if(i.type==='checkbox'){ i.checked=true; } else { i.value=''; }});
-                    node.querySelectorAll('select').forEach(s=>{ s.selectedIndex = 0; });
+                    node.querySelectorAll('input').forEach(i=>{ 
+                        if(i.type==='checkbox'){ 
+                            i.checked=true; 
+                        } else { 
+                            i.value='';
+                            // Reset all custom inputs display
+                            if(i.classList.contains('custom-label-input') || i.classList.contains('custom-category-input')) {
+                                i.style.display = 'none';
+                                i.required = false;
+                            }
+                        }
+                    });
+                    node.querySelectorAll('select').forEach(s=>{ 
+                        s.selectedIndex = 0;
+                        // Preserve onchange handlers for all custom field selects
+                        if(s.classList.contains('link-label-select')) {
+                            s.onchange = function() { handleLinkLabelChange(this); };
+                        } else if(s.classList.contains('category-select')) {
+                            s.onchange = function() { handleCategoryChange(this); };
+                        }
+                    });
+                    node.querySelectorAll('button').forEach(b => {
+                        if(b.classList.contains('delete-row-btn')) {
+                            b.onclick = function() { deleteRow(this, rowClass); };
+                        }
+                    });
                     wrap.appendChild(node);
                   }
                   document.getElementById('add_event')?.addEventListener('click', ()=> cloneRow('events_wrap','ev_row'));

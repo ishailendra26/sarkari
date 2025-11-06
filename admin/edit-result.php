@@ -87,7 +87,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $l = $_POST['links'];
                 $count = max(count($l['label'] ?? []), count($l['url'] ?? []));
                 for ($i=0; $i<$count; $i++) {
-                    $label = sanitizeInput($l['label'][$i] ?? '');
+                    $labelType = sanitizeInput($l['label'][$i] ?? '');
+                    $customLabel = sanitizeInput($l['custom_label'][$i] ?? '');
+                    $label = $labelType === 'Custom' ? $customLabel : $labelType;
                     $url = sanitizeInput($l['url'][$i] ?? '');
                     $order = (int)($l['sort_order'][$i] ?? 0);
                     if ($label || $url) {
@@ -236,16 +238,33 @@ include 'includes/header.php';
                                 <?php if ($existingEvents): foreach ($existingEvents as $ev): ?>
                                 <div class="event_row grid grid-cols-12 gap-2">
                                     <div class="col-span-12 md:col-span-2">
-                                        <select name="events[event_type][]" class="form-input">
-                                            <option value="result" <?= ($ev['event_type']==='result')?'selected':''; ?>>Result</option>
-                                            <option value="other" <?= ($ev['event_type']==='other')?'selected':''; ?>>Other</option>
+                                        <select name="events[event_type][]" class="form-input event-type-select" onchange="handleEventTypeChange(this)">
+                                            <?php $eventTypes=['result','other','custom']; $ev_type=$ev['event_type']; ?>
+                                            <?php foreach($eventTypes as $type): ?>
+                                            <option value="<?= $type ?>" <?= ($ev_type===$type || ($type==='custom' && !in_array($ev_type, $eventTypes)))?'selected':'' ?>><?= ucfirst($type) ?></option>
+                                            <?php endforeach; ?>
                                         </select>
                                     </div>
-                                    <div class="col-span-12 md:col-span-3"><input type="text" name="events[event_label][]" class="form-input" value="<?= htmlspecialchars($ev['event_label'] ?? '') ?>" placeholder="Label"></div>
-                                    <div class="col-span-6 md:col-span-2"><input type="date" name="events[start_date][]" class="form-input" value="<?= htmlspecialchars($ev['start_date'] ?? '') ?>"></div>
-                                    <div class="col-span-6 md:col-span-2"><input type="date" name="events[end_date][]" class="form-input" value="<?= htmlspecialchars($ev['end_date'] ?? '') ?>"></div>
-                                    <div class="col-span-12 md:col-span-2"><input type="text" name="events[notes][]" class="form-input" value="<?= htmlspecialchars($ev['notes'] ?? '') ?>" placeholder="Notes"></div>
-                                    <div class="col-span-6 md:col-span-1"><input type="number" name="events[sort_order][]" class="form-input" value="<?= (int)($ev['sort_order'] ?? 0) ?>" placeholder="#"></div>
+                                    <div class="col-span-12 md:col-span-2">
+                                        <input type="text" name="events[custom_type][]" class="form-input custom-event-input" placeholder="Custom type..." 
+                                               value="<?= !in_array($ev_type, array_slice($eventTypes, 0, -1)) ? $ev_type : '' ?>" 
+                                               style="display: <?= !in_array($ev_type, array_slice($eventTypes, 0, -1)) ? 'block' : 'none' ?>">
+                                    </div>
+                                    <div class="col-span-12 md:col-span-2">
+                                        <input type="text" name="events[event_label][]" class="form-input" value="<?= htmlspecialchars($ev['event_label'] ?? '') ?>" placeholder="Label">
+                                    </div>
+                                    <div class="col-span-6 md:col-span-2">
+                                        <input type="date" name="events[start_date][]" class="form-input" value="<?= htmlspecialchars($ev['start_date'] ?? '') ?>">
+                                    </div>
+                                    <div class="col-span-12 md:col-span-2">
+                                        <input type="text" name="events[notes][]" class="form-input" value="<?= htmlspecialchars($ev['notes'] ?? '') ?>" placeholder="Notes">
+                                    </div>
+                                    <div class="col-span-12 md:col-span-2 flex gap-2">
+                                        <input type="number" name="events[sort_order][]" class="form-input w-20" value="<?= (int)($ev['sort_order'] ?? 0) ?>" placeholder="#">
+                                        <button type="button" class="btn btn-error delete-row-btn" onclick="deleteRow(this, 'event_row')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
                                 </div>
                                 <?php endforeach; else: ?>
                                 <div class="event_row grid grid-cols-12 gap-2">
@@ -273,15 +292,51 @@ include 'includes/header.php';
                             <div id="links_wrapper" class="space-y-3">
                                 <?php if ($existingLinks): foreach ($existingLinks as $ln): ?>
                                 <div class="link_row grid grid-cols-12 gap-2">
-                                    <div class="col-span-12 md:col-span-5"><input type="text" name="links[label][]" class="form-input" value="<?= htmlspecialchars($ln['label']) ?>" placeholder="Label"></div>
-                                    <div class="col-span-12 md:col-span-6"><input type="url" name="links[url][]" class="form-input" value="<?= htmlspecialchars($ln['url']) ?>" placeholder="https://..."></div>
-                                    <div class="col-span-6 md:col-span-1"><input type="number" name="links[sort_order][]" class="form-input" value="<?= (int)($ln['sort_order'] ?? 0) ?>" placeholder="#"></div>
+                                    <div class="col-span-12 md:col-span-3">
+                                        <select name="links[label][]" class="form-input link-label-select" onchange="handleLinkLabelChange(this)">
+                                            <?php $linkTypes=['Check Result','Download Result','Official Website','Other','Custom']; $lnk_type=htmlspecialchars($ln['label']); ?>
+                                            <?php foreach($linkTypes as $type): ?>
+                                            <option value="<?= $type ?>" <?= ($lnk_type===$type || ($type==='Custom' && !in_array($lnk_type, $linkTypes)))?'selected':'' ?>><?= $type ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                    <div class="col-span-12 md:col-span-2">
+                                        <input type="text" name="links[custom_label][]" class="form-input custom-label-input" placeholder="Custom label..." 
+                                               value="<?= !in_array($lnk_type, array_slice($linkTypes, 0, -1)) ? $lnk_type : '' ?>" 
+                                               style="display: <?= !in_array($lnk_type, array_slice($linkTypes, 0, -1)) ? 'block' : 'none' ?>">
+                                    </div>
+                                    <div class="col-span-12 md:col-span-5">
+                                        <input type="url" name="links[url][]" class="form-input" value="<?= htmlspecialchars($ln['url']) ?>" placeholder="https://...">
+                                    </div>
+                                    <div class="col-span-12 md:col-span-2 flex gap-2">
+                                        <input type="number" name="links[sort_order][]" class="form-input w-20" value="<?= (int)($ln['sort_order'] ?? 0) ?>" placeholder="#">
+                                        <button type="button" class="btn btn-error delete-row-btn" onclick="deleteRow(this, 'link_row')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
                                 </div>
                                 <?php endforeach; else: ?>
                                 <div class="link_row grid grid-cols-12 gap-2">
-                                    <div class="col-span-12 md:col-span-5"><input type="text" name="links[label][]" class="form-input" placeholder="Label"></div>
-                                    <div class="col-span-12 md:col-span-6"><input type="url" name="links[url][]" class="form-input" placeholder="https://..."></div>
-                                    <div class="col-span-6 md:col-span-1"><input type="number" name="links[sort_order][]" class="form-input" placeholder="#"></div>
+                                        <div class="col-span-12 md:col-span-3">
+                                            <select name="links[label][]" class="form-input link-label-select" onchange="handleLinkLabelChange(this)">
+                                                <?php $linkTypes=['Check Result','Download Result','Official Website','Other','Custom']; ?>
+                                                <?php foreach($linkTypes as $type): ?>
+                                                <option value="<?= $type ?>"><?= $type ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                        <div class="col-span-12 md:col-span-2">
+                                            <input type="text" name="links[custom_label][]" class="form-input custom-label-input" placeholder="Custom label..." style="display: none">
+                                        </div>
+                                        <div class="col-span-12 md:col-span-5">
+                                            <input type="url" name="links[url][]" class="form-input" placeholder="https://...">
+                                        </div>
+                                        <div class="col-span-12 md:col-span-2 flex gap-2">
+                                            <input type="number" name="links[sort_order][]" class="form-input w-20" placeholder="#">
+                                            <button type="button" class="btn btn-error delete-row-btn" onclick="deleteRow(this, 'link_row')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
                                 </div>
                                 <?php endif; ?>
                             </div>
@@ -500,6 +555,22 @@ include 'includes/header.php';
                     }
                   });
                 })();
+                    function handleLinkLabelChange(select) {
+                        const row = select.closest('.link_row');
+                        const customInput = row.querySelector('.custom-label-input');
+                        if (customInput) {
+                            customInput.style.display = select.value === 'Custom' ? 'block' : 'none';
+                            if (select.value !== 'Custom') {
+                                customInput.value = '';
+                            }
+                        }
+                    }
+                    function deleteRow(btn, rowClass) {
+                        const row = btn.closest('.' + rowClass);
+                        if (row && confirm('Are you sure you want to delete this item?')) {
+                            row.remove();
+                        }
+                    }
                 </script>
             </div>
         </div>

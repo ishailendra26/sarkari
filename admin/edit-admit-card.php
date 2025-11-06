@@ -265,16 +265,21 @@ include 'includes/header.php';
                       <div id="events_wrap" class="space-y-3">
                         <?php if (!empty($events)): foreach ($events as $e): ?>
                         <div class="grid grid-cols-6 gap-2 ev_row">
-                          <select name="events[event_type][]" class="form-input">
-                            <?php $opts=['exam','admit_card','result','other']; $ev=htmlspecialchars($e['event_type']); foreach($opts as $o): ?>
-                            <option value="<?= $o ?>" <?= $ev===$o?'selected':'' ?>><?= ucfirst(str_replace('_',' ',$o)) ?></option>
+                          <select name="events[event_type][]" class="form-input event-type-select" onchange="handleEventTypeChange(this)">
+                            <?php $opts=['exam','admit_card','result','other','custom']; $ev=htmlspecialchars($e['event_type']); foreach($opts as $o): ?>
+                            <option value="<?= $o ?>" <?= $ev===$o || ($o==='custom' && !in_array($ev, $opts))?'selected':'' ?>><?= ucfirst(str_replace('_',' ',$o)) ?></option>
                             <?php endforeach; ?>
                           </select>
+                          <input type="text" name="events[custom_type][]" class="form-input custom-event-input" placeholder="Enter custom type..." value="<?= !in_array($ev, array_slice($opts, 0, -1)) ? $ev : '' ?>" style="display: <?= !in_array($ev, array_slice($opts, 0, -1)) ? 'block' : 'none' ?>">
                           <input type="text" name="events[event_label][]" class="form-input" placeholder="Label" value="<?= htmlspecialchars($e['event_label'] ?? '') ?>">
                           <input type="date" name="events[start_date][]" class="form-input" value="<?= htmlspecialchars($e['start_date'] ?? '') ?>">
-                          <input type="date" name="events[end_date][]" class="form-input" value="<?= htmlspecialchars($e['end_date'] ?? '') ?>">
                           <input type="text" name="events[notes][]" class="form-input" placeholder="Notes" value="<?= htmlspecialchars($e['notes'] ?? '') ?>">
-                          <input type="number" name="events[sort_order][]" class="form-input" placeholder="#" value="<?= (int)($e['sort_order'] ?? 0) ?>">
+                          <div class="flex gap-2">
+                            <input type="number" name="events[sort_order][]" class="form-input w-20" placeholder="#" value="<?= (int)($e['sort_order'] ?? 0) ?>">
+                            <button type="button" class="btn btn-error delete-row-btn" onclick="deleteRow(this, 'ev_row')">
+                              <i class="fas fa-trash"></i>
+                            </button>
+                          </div>
                         </div>
                         <?php endforeach; else: ?>
                         <div class="grid grid-cols-6 gap-2 ev_row">
@@ -300,14 +305,20 @@ include 'includes/header.php';
                       <h3 class="text-lg font-semibold mb-3">Important Links</h3>
                       <div id="links_wrap" class="space-y-3">
                         <?php if (!empty($links)): foreach ($links as $l): ?>
-                        <div class="grid grid-cols-3 gap-2 link_row">
-                          <select name="links[label][]" class="form-input">
-                            <?php $labOpts=['Download Admit Card','Notification','Official Website','Other']; $sel=htmlspecialchars($l['label']); foreach($labOpts as $o): ?>
-                            <option value="<?= $o ?>" <?= $sel===$o?'selected':'' ?>><?= $o ?></option>
+                        <div class="grid grid-cols-4 gap-2 link_row">
+                          <select name="links[label][]" class="form-input link-label-select" onchange="handleLinkLabelChange(this)">
+                            <?php $labOpts=['Download Admit Card','Notification','Official Website','Other','Custom']; $sel=htmlspecialchars($l['label']); foreach($labOpts as $o): ?>
+                            <option value="<?= $o ?>" <?= $sel===$o || ($o==='Custom' && !in_array($sel, $labOpts))?'selected':'' ?>><?= $o ?></option>
                             <?php endforeach; ?>
                           </select>
+                          <input type="text" name="links[custom_label][]" class="form-input custom-label-input" placeholder="Enter custom label..." value="<?= !in_array($sel, array_slice($labOpts, 0, -1)) ? $sel : '' ?>" style="display: <?= !in_array($sel, array_slice($labOpts, 0, -1)) ? 'block' : 'none' ?>">
                           <input type="url" name="links[url][]" class="form-input" placeholder="https://..." value="<?= htmlspecialchars($l['url'] ?? '') ?>">
-                          <input type="number" name="links[sort_order][]" class="form-input" placeholder="#" value="<?= (int)($l['sort_order'] ?? 0) ?>">
+                          <div class="flex gap-2">
+                            <input type="number" name="links[sort_order][]" class="form-input w-20" placeholder="#" value="<?= (int)($l['sort_order'] ?? 0) ?>">
+                            <button type="button" class="btn btn-error delete-row-btn" onclick="deleteRow(this, 'link_row')">
+                              <i class="fas fa-trash"></i>
+                            </button>
+                          </div>
                         </div>
                         <?php endforeach; else: ?>
                         <div class="grid grid-cols-3 gap-2 link_row">
@@ -353,9 +364,13 @@ include 'includes/header.php';
                         <div class="grid grid-cols-5 gap-2 faq_row">
                           <input type="text" name="faqs[question][]" class="form-input" placeholder="Question" value="<?= htmlspecialchars($f['question'] ?? '') ?>">
                           <input type="text" name="faqs[answer][]" class="form-input" placeholder="Answer" value="<?= htmlspecialchars($f['answer'] ?? '') ?>">
-                          <input type="number" name="faqs[sort_order][]" class="form-input" placeholder="#" value="<?= (int)($f['sort_order'] ?? 0) ?>">
+                          <div class="flex gap-2">
+                            <input type="number" name="faqs[sort_order][]" class="form-input w-20" placeholder="#" value="<?= (int)($f['sort_order'] ?? 0) ?>">
+                            <button type="button" class="btn btn-error delete-row-btn" onclick="deleteRow(this, 'faq_row')">
+                              <i class="fas fa-trash"></i>
+                            </button>
+                          </div>
                           <label class="inline-flex items-center gap-2"><input type="checkbox" name="faqs[is_active][]" <?= ((int)($f['is_active'] ?? 1)) ? 'checked' : '' ?>> Active</label>
-                          <div></div>
                         </div>
                         <?php endforeach; else: ?>
                         <div class="grid grid-cols-5 gap-2 faq_row">
@@ -381,6 +396,61 @@ include 'includes/header.php';
                     </div>
                 </form>
                 <script>
+                // Handle custom fields for all sections
+                function handleCustomFieldChange(selectElement, customFieldClass) {
+                    const customInput = selectElement.closest('.grid').querySelector('.' + customFieldClass);
+                    if (selectElement.value.toLowerCase() === 'custom' || selectElement.value.toLowerCase() === 'other') {
+                        customInput.style.display = 'block';
+                        customInput.required = true;
+                    } else {
+                        customInput.style.display = 'none';
+                        customInput.required = false;
+                        customInput.value = '';
+                    }
+                }
+
+                // Handle event type changes
+                function handleEventTypeChange(selectElement) {
+                    handleCustomFieldChange(selectElement, 'custom-event-input');
+                }
+
+                // Handle link label changes
+                function handleLinkLabelChange(selectElement) {
+                    handleCustomFieldChange(selectElement, 'custom-label-input');
+                }
+
+                // Generic row deletion function
+                function deleteRow(button, rowClass) {
+                    const row = button.closest('.' + rowClass);
+                    const container = row.closest('.space-y-3');
+                    if (container.querySelectorAll('.' + rowClass).length > 1) {
+                        row.remove();
+                    }
+                }
+
+                // Form submit handler for custom fields
+                document.querySelector('form').addEventListener('submit', function(e) {
+                    // Handle custom event types
+                    document.querySelectorAll('.event-type-select').forEach(select => {
+                        if (select.value.toLowerCase() === 'custom') {
+                            const customInput = select.closest('.grid').querySelector('.custom-event-input');
+                            if (customInput.value.trim()) {
+                                select.value = customInput.value.trim();
+                            }
+                        }
+                    });
+
+                    // Handle custom link labels
+                    document.querySelectorAll('.link-label-select').forEach(select => {
+                        if (select.value === 'Custom') {
+                            const customInput = select.closest('.grid').querySelector('.custom-label-input');
+                            if (customInput.value.trim()) {
+                                select.value = customInput.value.trim();
+                            }
+                        }
+                    });
+                });
+
                 (function(){
                   const fileInput = document.getElementById('thumb_file');
                   const btn = document.getElementById('thumb_upload_btn');
@@ -446,8 +516,34 @@ include 'includes/header.php';
                     const first = wrap.querySelector('.' + rowClass);
                     if (!first) return;
                     const node = first.cloneNode(true);
-                    node.querySelectorAll('input').forEach(i=>{ if(i.type==='checkbox'){ i.checked=true; } else { i.value=''; }});
-                    node.querySelectorAll('select').forEach(s=>{ s.selectedIndex = 0; });
+                    node.querySelectorAll('input').forEach(i=>{ 
+                        if(i.type==='checkbox'){ 
+                            i.checked=true; 
+                        } else { 
+                            i.value='';
+                            // Reset all custom inputs display
+                            if(i.classList.contains('custom-label-input') || 
+                               i.classList.contains('custom-event-input')) {
+                                i.style.display = 'none';
+                                i.required = false;
+                            }
+                        }
+                    });
+                    node.querySelectorAll('select').forEach(s=>{ 
+                        s.selectedIndex = 0;
+                        // Preserve onchange handlers
+                        if(s.classList.contains('link-label-select')) {
+                            s.onchange = function() { handleLinkLabelChange(this); };
+                        } else if(s.classList.contains('event-type-select')) {
+                            s.onchange = function() { handleEventTypeChange(this); };
+                        }
+                    });
+                    // Preserve delete button handlers
+                    node.querySelectorAll('button').forEach(b => {
+                        if(b.classList.contains('delete-row-btn')) {
+                            b.onclick = function() { deleteRow(this, rowClass); };
+                        }
+                    });
                     wrap.appendChild(node);
                   }
                   document.getElementById('add_event')?.addEventListener('click', ()=> cloneRow('events_wrap','ev_row'));

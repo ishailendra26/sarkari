@@ -214,6 +214,7 @@
                     <a href="<?= SITE_URL ?>/admit" class="text-gray-700 hover:text-primary transition-colors <?= (basename($_SERVER['PHP_SELF']) == 'admit.php') ? 'text-primary font-semibold' : '' ?>">Admit Cards</a>
                     <a href="<?= SITE_URL ?>/syllabus" class="text-gray-700 hover:text-primary transition-colors <?= (basename($_SERVER['PHP_SELF']) == 'syllabus.php') ? 'text-primary font-semibold' : '' ?>">Syllabus</a>
                     <a href="<?= SITE_URL ?>/posts" class="text-gray-700 hover:text-primary transition-colors <?= (basename($_SERVER['PHP_SELF']) == 'posts.php') ? 'text-primary font-semibold' : '' ?>">Articles</a>
+                    <a href="<?= SITE_URL ?>/tools.php" class="text-gray-700 hover:text-primary transition-colors <?= (basename($_SERVER['PHP_SELF']) == 'tools.php') ? 'text-primary font-semibold' : '' ?>">Tools</a>
                     <a href="https://mock.examsz.in" target="_blank" rel="noopener" class="inline-flex items-center gap-1 text-accent hover:text-green-700 font-semibold"><i class="fas fa-clipboard-check"></i> Mock Tests</a>
 
                 </div>
@@ -228,6 +229,7 @@
                     <a href="<?= SITE_URL ?>/admit" class="text-gray-700 hover:text-primary transition-colors <?= (basename($_SERVER['PHP_SELF']) == 'admit.php') ? 'text-primary font-semibold' : '' ?>">Admit Cards</a>
                     <a href="<?= SITE_URL ?>/syllabus" class="text-gray-700 hover:text-primary transition-colors <?= (basename($_SERVER['PHP_SELF']) == 'syllabus.php') ? 'text-primary font-semibold' : '' ?>">Syllabus</a>
                     <a href="<?= SITE_URL ?>/posts" class="text-gray-700 hover:text-primary transition-colors <?= (basename($_SERVER['PHP_SELF']) == 'posts.php') ? 'text-primary font-semibold' : '' ?>">Articles</a>
+                    <a href="<?= SITE_URL ?>/tools.php" class="text-gray-700 hover:text-primary transition-colors <?= (basename($_SERVER['PHP_SELF']) == 'tools.php') ? 'text-primary font-semibold' : '' ?>">Tools</a>
                     <a href="https://mock.examsz.in" target="_blank" rel="noopener" class="text-accent hover:text-green-700 font-semibold">Mock Tests</a>
 
                 </div>

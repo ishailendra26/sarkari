@@ -86,19 +86,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 catch (Throwable $ex) { error_log('add-admit saveEvents error: ' . $ex->getMessage()); }
             }
 
-            // Links
-            $links = [];
-            $ll = $_POST['links']['label'] ?? [];
-            $lu = $_POST['links']['url'] ?? [];
-            $ls = $_POST['links']['sort_order'] ?? [];
-            for ($i=0; $i<count($ll); $i++) {
-                if (!$ll[$i] && !$lu[$i]) continue;
-                $links[] = [
-                    'label' => $ll[$i] ?: '',
-                    'url' => $lu[$i] ?: '',
-                    'sort_order' => isset($ls[$i]) && $ls[$i] !== '' ? (int)$ls[$i] : 0,
-                ];
-            }
+      // Links (support custom label)
+      $links = [];
+      if (!empty($_POST['links'])) {
+        $l = $_POST['links'];
+        $count = max(count($l['label'] ?? []), count($l['url'] ?? []));
+        for ($i=0; $i<$count; $i++) {
+          $labelType = sanitizeInput($l['label'][$i] ?? '');
+          $customLabel = sanitizeInput($l['custom_label'][$i] ?? '');
+          $label = $labelType === 'Custom' ? $customLabel : $labelType;
+          $url = sanitizeInput($l['url'][$i] ?? '');
+          $order = isset($l['sort_order'][$i]) && $l['sort_order'][$i] !== '' ? (int)$l['sort_order'][$i] : 0;
+          if ($label || $url) {
+            $links[] = [
+              'label' => $label,
+              'url' => $url,
+              'sort_order' => $order,
+            ];
+          }
+        }
+      }
             if (!empty($links)) {
                 try { $admitCardModel->saveLinks($admitId, $links); }
                 catch (Throwable $ex) { error_log('add-admit saveLinks error: ' . $ex->getMessage()); }
@@ -296,15 +303,26 @@ include 'includes/header.php';
                     <div class="mt-8">
                       <h3 class="text-lg font-semibold mb-3">Important Links</h3>
                       <div id="links_wrap" class="space-y-3">
-                        <div class="grid grid-cols-3 gap-2 link_row">
-                          <select name="links[label][]" class="form-input">
-                            <option value="Download Admit Card">Download Admit Card</option>
-                            <option value="Official Website">Official Website</option>
-                            <option value="Notification">Notification</option>
-                            <option value="Other">Other</option>
-                          </select>
-                          <input type="url" name="links[url][]" class="form-input" placeholder="https://...">
-                          <input type="number" name="links[sort_order][]" class="form-input" placeholder="#" value="0">
+                        <div class="grid grid-cols-12 gap-2 link_row">
+                          <div class="col-span-12 md:col-span-3">
+                            <select name="links[label][]" class="form-input link-label-select" onchange="handleLinkLabelChange(this)">
+                              <?php $labOpts=['Download Admit Card','Notification','Official Website','Other','Custom']; foreach($labOpts as $o): ?>
+                                <option value="<?= $o ?>"><?= $o ?></option>
+                              <?php endforeach; ?>
+                            </select>
+                          </div>
+                          <div class="col-span-12 md:col-span-3">
+                            <input type="text" name="links[custom_label][]" class="form-input custom-label-input" placeholder="Enter custom label..." style="display: none">
+                          </div>
+                          <div class="col-span-12 md:col-span-4">
+                            <input type="url" name="links[url][]" class="form-input" placeholder="https://...">
+                          </div>
+                          <div class="col-span-12 md:col-span-2 flex gap-2">
+                            <input type="number" name="links[sort_order][]" class="form-input w-20" placeholder="#" value="0">
+                            <button type="button" class="btn btn-error delete-row-btn" onclick="deleteRow(this, 'link_row')">
+                              <i class="fas fa-trash"></i>
+                            </button>
+                          </div>
                         </div>
                       </div>
                       <button type="button" class="btn btn-secondary mt-2" id="add_link">+ Add Link</button>
@@ -411,14 +429,43 @@ include 'includes/header.php';
                   });
                 })();
                 (function(){
+                  function handleLinkLabelChange(selectElement) {
+                    const customInput = selectElement.closest('.grid').querySelector('.custom-label-input');
+                    if (!customInput) return;
+                    if (selectElement.value === 'Custom' || selectElement.value === 'Other') {
+                      customInput.style.display = 'block';
+                      customInput.required = true;
+                    } else {
+                      customInput.style.display = 'none';
+                      customInput.required = false;
+                      customInput.value = '';
+                    }
+                  }
+
+                  function deleteRow(button, rowClass) {
+                    const row = button.closest('.' + rowClass);
+                    const container = row.closest('.space-y-3');
+                    if (container && container.querySelectorAll('.' + rowClass).length > 1) {
+                        if (confirm('Are you sure you want to delete this item?')) row.remove();
+                    }
+                  }
+
                   function cloneRow(wrapperId, rowClass){
                     const wrap = document.getElementById(wrapperId);
                     if (!wrap) return;
                     const first = wrap.querySelector('.' + rowClass);
                     if (!first) return;
                     const node = first.cloneNode(true);
-                    node.querySelectorAll('input').forEach(i=>{ if(i.type==='checkbox'){ i.checked=true; } else { i.value=''; }});
-                    node.querySelectorAll('select').forEach(s=>{ s.selectedIndex = 0; });
+                    node.querySelectorAll('input').forEach(i=>{ 
+                        if(i.type==='checkbox'){ i.checked=true; } else { i.value=''; if (i.classList && i.classList.contains('custom-label-input')) { i.style.display='none'; i.required=false; } }
+                    });
+                    node.querySelectorAll('select').forEach(s=>{ 
+                        s.selectedIndex = 0; 
+                        if (s.classList && s.classList.contains('link-label-select')) {
+                            s.onchange = function(){ handleLinkLabelChange(this); };
+                        }
+                    });
+                    node.querySelectorAll('button').forEach(b=>{ if (b.classList && b.classList.contains('delete-row-btn')) { b.onclick = function(){ deleteRow(this, rowClass); }; } });
                     wrap.appendChild(node);
                   }
                   document.getElementById('add_event')?.addEventListener('click', ()=> cloneRow('events_wrap','ev_row'));

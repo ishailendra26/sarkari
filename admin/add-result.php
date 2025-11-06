@@ -76,7 +76,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $l = $_POST['links'];
             $count = max(count($l['label'] ?? []), count($l['url'] ?? []));
             for ($i=0; $i<$count; $i++) {
-                $label = sanitizeInput($l['label'][$i] ?? '');
+                $labelType = sanitizeInput($l['label'][$i] ?? '');
+                $customLabel = sanitizeInput($l['custom_label'][$i] ?? '');
+                $label = $labelType === 'Custom' ? $customLabel : $labelType;
                 $url = sanitizeInput($l['url'][$i] ?? '');
                 $order = (int)($l['sort_order'][$i] ?? 0);
                 if ($label || $url) {
@@ -225,6 +227,36 @@ include 'includes/header.php';
                             </div>
                         </div>
 
+                        <!-- Important Links Repeater -->
+                        <div class="md:col-span-2">
+                            <label class="form-label">Important Links</label>
+                            <div id="links_wrapper" class="space-y-3">
+                                <div class="link_row grid grid-cols-12 gap-2">
+                                    <div class="col-span-12 md:col-span-3">
+                                        <select name="links[label][]" class="form-input link-label-select" onchange="handleLinkLabelChange(this)">
+                                            <?php $linkTypes=['Check Result','Download Result','Official Website','Other','Custom']; ?>
+                                            <?php foreach($linkTypes as $type): ?>
+                                            <option value="<?= $type ?>"><?= $type ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                    <div class="col-span-12 md:col-span-2">
+                                        <input type="text" name="links[custom_label][]" class="form-input custom-label-input" placeholder="Custom label..." style="display: none">
+                                    </div>
+                                    <div class="col-span-12 md:col-span-5">
+                                        <input type="url" name="links[url][]" class="form-input" placeholder="https://...">
+                                    </div>
+                                    <div class="col-span-12 md:col-span-2 flex gap-2">
+                                        <input type="number" name="links[sort_order][]" class="form-input w-20" placeholder="#">
+                                        <button type="button" class="btn btn-error delete-row-btn" onclick="deleteRow(this, 'link_row')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-secondary mt-2" onclick="cloneRow('links_wrapper','link_row')"><i class="fas fa-plus mr-1"></i>Add Link</button>
+                        </div>
+
                         <div>
                             <label class="form-label">Author</label>
                             <select name="author_id" class="form-input">
@@ -321,15 +353,43 @@ include 'includes/header.php';
                 })();
                 </script>
                 <script>
+                function handleLinkLabelChange(select) {
+                    const row = select.closest('.link_row');
+                    const customInput = row.querySelector('.custom-label-input');
+                    if (customInput) {
+                        customInput.style.display = select.value === 'Custom' ? 'block' : 'none';
+                        if (select.value !== 'Custom') customInput.value = '';
+                    }
+                }
+                function deleteRow(btn, rowClass) {
+                    const row = btn.closest('.' + rowClass);
+                    if (row && confirm('Are you sure you want to delete this item?')) {
+                        row.remove();
+                    }
+                }
                 function cloneRow(wrapperId, rowClass) {
                     const wrap = document.getElementById(wrapperId);
                     if (!wrap) return;
                     const row = wrap.querySelector('.' + rowClass);
                     if (!row) return;
                     const clone = row.cloneNode(true);
-                    // clear inputs/textareas
-                    clone.querySelectorAll('input').forEach(i=>{ if (i.type==='checkbox' || i.type==='radio'){ i.checked=false; } else { i.value=''; }});
+                    // clear inputs/textareas and reset custom inputs
+                    clone.querySelectorAll('input').forEach(i=>{
+                        if (i.type==='checkbox' || i.type==='radio') { i.checked = false; }
+                        else { i.value = ''; if (i.classList && i.classList.contains('custom-label-input')) { i.style.display = 'none'; } }
+                    });
                     clone.querySelectorAll('textarea').forEach(t=>t.value='');
+                    clone.querySelectorAll('select').forEach(s=>{
+                        s.selectedIndex = 0;
+                        if (s.classList && s.classList.contains('link-label-select')) {
+                            s.onchange = function(){ handleLinkLabelChange(this); };
+                        }
+                    });
+                    clone.querySelectorAll('button').forEach(b => {
+                        if (b.classList && b.classList.contains('delete-row-btn')) {
+                            b.onclick = function(){ deleteRow(this, rowClass); };
+                        }
+                    });
                     wrap.appendChild(clone);
                 }
                 </script>
