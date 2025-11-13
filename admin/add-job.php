@@ -157,20 +157,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 // Fees
                 $fees = [];
-                $fc = $_POST['fees']['category'] ?? [];
-                $fa = $_POST['fees']['amount'] ?? [];
-                $ft = $_POST['fees']['text'] ?? [];
-                $fm = $_POST['fees']['mode_notes'] ?? [];
-                $fs = $_POST['fees']['sort_order'] ?? [];
-                for ($i=0; $i<count($fc); $i++) {
-                    if (!$fc[$i]) continue;
-                    $fees[] = [
-                        'category' => $fc[$i] ?: '',
-                        'amount' => ($fa[$i] === '' ? null : $fa[$i]),
-                        'text' => $ft[$i] ?: null,
-                        'mode_notes' => $fm[$i] ?: null,
-                        'sort_order' => isset($fs[$i]) && $fs[$i] !== '' ? (int)$fs[$i] : 0,
-                    ];
+                if (isset($_POST['fees']) && is_array($_POST['fees'])) {
+                    $fc = $_POST['fees']['category'] ?? [];
+                    $fcc = $_POST['fees']['custom_category'] ?? [];
+                    $fa = $_POST['fees']['amount'] ?? [];
+                    $ft = $_POST['fees']['text'] ?? [];
+                    $fs = $_POST['fees']['sort_order'] ?? [];
+                    $feeCount = count($fc);
+                    for ($i=0; $i<$feeCount; $i++) {
+                        // Handle custom category
+                        $catType = sanitizeInput($fc[$i] ?? '');
+                        $customCat = sanitizeInput($fcc[$i] ?? '');
+                        $category = $catType === 'Other' ? $customCat : $catType;
+                        
+                        // Skip if category is empty
+                        if (empty($category)) continue;
+                        
+                        $fees[] = [
+                            'category' => $category,
+                            'amount' => isset($fa[$i]) && $fa[$i] !== '' ? $fa[$i] : null,
+                            'text' => !empty($ft[$i]) ? $ft[$i] : null,
+                            'sort_order' => isset($fs[$i]) && $fs[$i] !== '' ? (int)$fs[$i] : 0,
+                        ];
+                    }
                 }
                 if (!empty($fees)) { $jobModel->saveFees($jobId, $fees); }
 
@@ -442,19 +451,20 @@ include 'includes/header.php';
                       <h3 class="text-lg font-semibold mb-3">Application Fees</h3>
                       <div id="fees_wrap" class="space-y-3">
                         <div class="grid grid-cols-5 gap-2 fee_row">
-                          <select name="fees[category][]" class="form-input">
-                            <option>General</option>
-                            <option>OBC</option>
-                            <option>EWS</option>
-                            <option>SC</option>
-                            <option>ST</option>
-                            <option>Female</option>
-                            <option>PH</option>
+                          <select name="fees[category][]" class="form-input category-select" onchange="handleCategoryChange(this)">
+                            <?php $catOpts=['General','OBC','EWS','SC','ST','Female','PH','Other']; foreach($catOpts as $o): ?>
+                            <option value="<?= $o ?>"><?= $o ?></option>
+                            <?php endforeach; ?>
                           </select>
+                          <input type="text" name="fees[custom_category][]" class="form-input custom-category-input" placeholder="Enter custom category..." style="display: none">
                           <input type="number" step="0.01" name="fees[amount][]" class="form-input" placeholder="Amount">
                           <input type="text" name="fees[text][]" class="form-input" placeholder="Text (e.g., Nil)">
-                          <input type="text" name="fees[mode_notes][]" class="form-input" placeholder="Mode (UPI/NetBanking)">
-                          <input type="number" name="fees[sort_order][]" class="form-input" placeholder="#" value="0">
+                          <div class="flex gap-2">
+                            <input type="number" name="fees[sort_order][]" class="form-input w-20" placeholder="#" value="0">
+                            <button type="button" class="btn btn-error delete-row-btn" onclick="deleteRow(this, 'fee_row')">
+                              <i class="fas fa-trash"></i>
+                            </button>
+                          </div>
                         </div>
                       </div>
                       <button type="button" class="btn btn-secondary mt-2" id="add_fee">+ Add Fee</button>
@@ -568,12 +578,20 @@ include 'includes/header.php';
                     }
                 }
 
-                // Form submit handler for custom labels
+                // Form submit handler for custom labels and categories
                 document.querySelector('form').addEventListener('submit', function(e) {
                     document.querySelectorAll('.link-label-select').forEach(select => {
                         if (select.value === 'Custom') {
                             const customInput = select.closest('.link_row').querySelector('.custom-label-input');
                             if (customInput.value.trim()) {
+                                select.value = customInput.value.trim();
+                            }
+                        }
+                    });
+                    document.querySelectorAll('.category-select').forEach(select => {
+                        if (select.value === 'Other') {
+                            const customInput = select.closest('.fee_row').querySelector('.custom-category-input');
+                            if (customInput && customInput.value.trim()) {
                                 select.value = customInput.value.trim();
                             }
                         }
@@ -628,17 +646,27 @@ include 'includes/header.php';
                         i.value = '1';
                       } else {
                         i.value='';
-                        // Reset custom label input display
-                        if(i.classList.contains('custom-label-input')) {
+                        // Reset all custom inputs display
+                        if(i.classList.contains('custom-label-input') || 
+                           i.classList.contains('custom-category-input')) {
                             i.style.display = 'none';
+                            i.required = false;
                         }
                       }
                     });
                     node.querySelectorAll('select').forEach(s=>{ 
                         s.selectedIndex = 0;
-                        // Make sure onchange handler is preserved
+                        // Make sure onchange handlers are preserved
                         if(s.classList.contains('link-label-select')) {
                             s.onchange = function() { handleLinkLabelChange(this); };
+                        } else if(s.classList.contains('category-select')) {
+                            s.onchange = function() { handleCategoryChange(this); };
+                        }
+                    });
+                    // Preserve delete button handlers
+                    node.querySelectorAll('button').forEach(b => {
+                        if(b.classList.contains('delete-row-btn')) {
+                            b.onclick = function() { deleteRow(this, rowClass); };
                         }
                     });
                     wrap.appendChild(node);

@@ -4,6 +4,19 @@
 
 require_once __DIR__ . '/helpers.php';
 
+// Simple logger for OneSignal requests/responses
+function _onesignal_log(array $data) {
+    try {
+        $logDir = __DIR__ . '/../logs';
+        if (!is_dir($logDir)) @mkdir($logDir, 0755, true);
+        $logFile = $logDir . '/onesignal.log';
+        $entry = '[' . date('c') . '] ' . json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . PHP_EOL;
+        file_put_contents($logFile, $entry, FILE_APPEND | LOCK_EX);
+    } catch (Exception $e) {
+        // best-effort logging
+    }
+}
+
 /**
  * Send a OneSignal notification.
  *
@@ -19,6 +32,7 @@ function onesignal_send_notification(string $heading, string $content, string $u
     $apiKey = trim((string)getSetting('onesignal_api_key'));
 
     if ($appId === '' || $apiKey === '') {
+        _onesignal_log(['error' => 'missing_config', 'app_id' => $appId, 'api_key_present' => $apiKey !== '']);
         return ['success' => false, 'status' => 0, 'response' => 'OneSignal App ID or REST API Key is missing'];
     }
 
@@ -49,6 +63,14 @@ function onesignal_send_notification(string $heading, string $content, string $u
     $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $err = curl_error($ch);
     curl_close($ch);
+
+    // Log payload/response for diagnostics
+    _onesignal_log([
+        'status' => $status,
+        'curl_error' => $err ?: null,
+        'payload' => $payload,
+        'response_raw' => is_string($result) ? $result : json_encode($result),
+    ]);
 
     if ($err) {
         return ['success' => false, 'status' => $status ?: 0, 'response' => $err];
