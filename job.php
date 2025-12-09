@@ -43,8 +43,10 @@ $eventsItems = [];
 $feesItems = [];
 $ageItems = [];
 $vacancyItems = [];
+$vacancyText = null;
 $howToApply = null;
 $modeOfExam = null;
+$feesText = null;
 $linksItems = [];
 $faqItems = [];
 
@@ -116,6 +118,10 @@ if (!empty($sections)) {
             $howToApply = $content;
         } elseif (!$modeOfExam && ($stype === 'mode_of_exam' || strpos($title, 'mode of exam') !== false || strpos($title, 'exam mode') !== false)) {
             $modeOfExam = $content;
+        } elseif (!$feesText && ($stype === 'other' && $title === 'application fees')) {
+            $feesText = $content;
+        } elseif (!$vacancyText && ($stype === 'vacancy_note' && $title === 'vacancy details')) {
+            $vacancyText = $content;
         }
     }
 }
@@ -144,9 +150,19 @@ if (!empty($faqs)) {
 
 // Assemble in desired order
 if (!empty($eventsItems)) { $extras['Important Dates'] = $eventsItems; }
-if (!empty($feesItems)) { $extras['Application Fees'] = $feesItems; }
+if (!empty($feesItems)) { 
+    $extras['Application Fees'] = $feesItems; 
+} elseif (!empty($feesText)) {
+    $extras['Application Fees'] = $feesText;
+}
+
 if (!empty($ageItems)) { $extras['Age Limit'] = $ageItems; }
-if (!empty($vacancyItems)) { $extras['Vacancy Details'] = $vacancyItems; }
+
+if (!empty($vacancyItems)) { 
+    $extras['Vacancy Details'] = $vacancyItems; 
+} elseif (!empty($vacancyText)) {
+    $extras['Vacancy Details'] = $vacancyText;
+}
 if (!empty($howToApply)) { $extras['How to Apply'] = $howToApply; }
 if (!empty($modeOfExam)) { $extras['Mode of Exam'] = $modeOfExam; }
 if (!empty($linksItems)) { $extras['Important Links'] = $linksItems; }

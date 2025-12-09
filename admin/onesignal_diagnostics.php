@@ -46,6 +46,30 @@ include 'includes/header.php';
 
   <div class="grid md:grid-cols-2 gap-6">
     <div class="bg-white p-4 rounded shadow">
+      <h2 class="font-semibold mb-2">Test Notification</h2>
+      <div class="bg-gray-50 p-4 rounded mb-6">
+          <form method="post" class="flex gap-4 items-end">
+              <div class="flex-1">
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Test Message</label>
+                  <input type="text" name="test_msg" class="form-input w-full" value="Test from Diagnostics" required>
+              </div>
+              <button type="submit" name="send_test" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                  Send Test
+              </button>
+          </form>
+          <?php
+          if (isset($_POST['send_test'])) {
+              require_once __DIR__ . '/../src/notifications.php';
+              $msg = sanitizeInput($_POST['test_msg']);
+              $res = onesignal_send_notification('Test Notification', $msg, SITE_URL);
+              $cls = $res['success'] ? 'text-green-600' : 'text-red-600';
+              echo '<div class="mt-3 font-medium ' . $cls . '">';
+              echo $res['success'] ? 'Success! Notification sent.' : 'Error: ' . htmlspecialchars(is_string($res['response']) ? $res['response'] : json_encode($res['response']));
+              echo '</div>';
+          }
+          ?>
+      </div>
+
       <h2 class="font-semibold mb-2">Recent OneSignal API Logs (onesignal.log)</h2>
       <pre class="text-xs text-gray-800 max-h-96 overflow-auto bg-gray-50 p-3 rounded"><?= htmlspecialchars(tail_file($apiLog, 200)) ?></pre>
     </div>

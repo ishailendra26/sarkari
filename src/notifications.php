@@ -78,6 +78,18 @@ function onesignal_send_notification(string $heading, string $content, string $u
 
     $decoded = json_decode($result, true);
     $ok = $status >= 200 && $status < 300;
+
+    // Check for specific OneSignal errors even if HTTP 200
+    if ($ok && isset($decoded['errors']) && is_array($decoded['errors'])) {
+        foreach ($decoded['errors'] as $e) {
+            if (stripos($e, 'All included players are not subscribed') !== false) {
+                return ['success' => false, 'status' => 400, 'response' => 'No subscribed users found. Please subscribe to notifications on the site.'];
+            }
+        }
+        // Other errors
+        return ['success' => false, 'status' => 400, 'response' => json_encode($decoded['errors'])];
+    }
+
     return ['success' => $ok, 'status' => $status, 'response' => $decoded ?: $result];
 }
 
