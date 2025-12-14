@@ -67,18 +67,9 @@ if (!empty($events)) {
     }
 }
 
-// Fees -> Application Fees
-$fees = $jobModel->getFees((int)$job['id']);
-if (!empty($fees)) {
-    foreach ($fees as $f) {
-        $parts = [];
-        if (!empty($f['category'])) $parts[] = $f['category'];
-        if ($f['amount'] !== null && $f['amount'] !== '') $parts[] = 'Rs. ' . $f['amount'];
-        if (!empty($f['text'])) $parts[] = $f['text'];
-        if (!empty($f['mode_notes'])) $parts[] = '(' . $f['mode_notes'] . ')';
-        if ($parts) $feesItems[] = implode(' - ', $parts);
-    }
-}
+// Fees -> Application Fees (Legacy structured fees ignored, using direct column)
+// $fees = $jobModel->getFees((int)$job['id']);
+// if (!empty($fees)) { ... }
 
 // Age Limit
 $age = $jobModel->getAgeLimit((int)$job['id']);
@@ -93,19 +84,8 @@ if (!empty($age)) {
     if (!empty($age['relaxation_text'])) { $ageItems[] = $age['relaxation_text']; }
 }
 
-// Vacancies -> Vacancy Details
-$vacancies = $jobModel->getVacancies((int)$job['id']);
-if (!empty($vacancies)) {
-    foreach ($vacancies as $v) {
-        $parts = [];
-        if (!empty($v['post_name'])) $parts[] = $v['post_name'];
-        if (!empty($v['category'])) $parts[] = '(' . $v['category'] . ')';
-        if ($v['total_posts'] !== null && $v['total_posts'] !== '') $parts[] = '- ' . (int)$v['total_posts'] . ' Posts';
-        if (!empty($v['eligibility_text'])) $parts[] = '- ' . $v['eligibility_text'];
-        if (!empty($v['pay_scale'])) $parts[] = '- Pay: ' . $v['pay_scale'];
-        if ($parts) $vacancyItems[] = trim(implode(' ', $parts));
-    }
-}
+// Vacancies -> Vacancy Details (Legacy structured vacancies & custom text ignored)
+// $vacancies = $jobModel->getVacancies((int)$job['id']);
 
 // Sections -> capture How to Apply, Mode of Exam (others ignored for now)
 $sections = $jobModel->getSections((int)$job['id']);
@@ -118,10 +98,6 @@ if (!empty($sections)) {
             $howToApply = $content;
         } elseif (!$modeOfExam && ($stype === 'mode_of_exam' || strpos($title, 'mode of exam') !== false || strpos($title, 'exam mode') !== false)) {
             $modeOfExam = $content;
-        } elseif (!$feesText && ($stype === 'other' && $title === 'application fees')) {
-            $feesText = $content;
-        } elseif (!$vacancyText && ($stype === 'vacancy_note' && $title === 'vacancy details')) {
-            $vacancyText = $content;
         }
     }
 }
@@ -150,19 +126,16 @@ if (!empty($faqs)) {
 
 // Assemble in desired order
 if (!empty($eventsItems)) { $extras['Important Dates'] = $eventsItems; }
-if (!empty($feesItems)) { 
-    $extras['Application Fees'] = $feesItems; 
-} elseif (!empty($feesText)) {
-    $extras['Application Fees'] = $feesText;
+if (!empty($job['fees'])) { 
+    $extras['Application Fees'] = $job['fees']; 
 }
 
 if (!empty($ageItems)) { $extras['Age Limit'] = $ageItems; }
 
-if (!empty($vacancyItems)) { 
-    $extras['Vacancy Details'] = $vacancyItems; 
-} elseif (!empty($vacancyText)) {
-    $extras['Vacancy Details'] = $vacancyText;
+if (!empty($job['vacancy_details'])) { 
+    $extras['Vacancy Details'] = $job['vacancy_details']; 
 }
+
 if (!empty($howToApply)) { $extras['How to Apply'] = $howToApply; }
 if (!empty($modeOfExam)) { $extras['Mode of Exam'] = $modeOfExam; }
 if (!empty($linksItems)) { $extras['Important Links'] = $linksItems; }

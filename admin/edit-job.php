@@ -47,6 +47,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $apply_link = sanitizeInput($_POST['apply_link'] ?? '');
     $vacancy_count = (int)($_POST['vacancy_count'] ?? 0);
     $content = $_POST['content'] ?? '';
+    $fees = $_POST['fees'] ?? '';
+    $vacancy_details = $_POST['vacancy_details'] ?? '';
     $status = sanitizeInput($_POST['status'] ?? 'draft');
     $send_push = isset($_POST['send_push']);
     $thumbnail_url = sanitizeInput($_POST['thumbnail_url'] ?? '');
@@ -68,6 +70,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'apply_link' => $apply_link,
             'vacancy_count' => $vacancy_count,
             'content' => $content,
+            'fees' => $fees,
+            'vacancy_details' => $vacancy_details,
             'status' => $status,
             'thumbnail_url' => $thumbnail_url ?: null,
             'author_id' => $author_id
@@ -123,39 +127,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $jobModel->saveLinks($id, $links);
 
-            // Fees
-            $fees = [];
-            $feeMode = $_POST['fee_mode'] ?? 'structured';
-            
-            if ($feeMode === 'structured') {
-                if (isset($_POST['fees']) && is_array($_POST['fees'])) {
-                    $feeCount = count($_POST['fees']['category'] ?? []);
-                    for ($i = 0; $i < $feeCount; $i++) {
-                        // Skip if category is empty
-                        if (empty(trim($_POST['fees']['category'][$i] ?? ''))) {
-                            continue;
-                        }
-                        
-                        $fees[] = [
-                            'category' => $_POST['fees']['category'][$i] ?? '',
-                            'amount' => isset($_POST['fees']['amount'][$i]) && $_POST['fees']['amount'][$i] !== '' ? $_POST['fees']['amount'][$i] : null,
-                            'text' => !empty($_POST['fees']['text'][$i]) ? $_POST['fees']['text'][$i] : null,
-                            'mode_notes' => !empty($_POST['fees']['mode_notes'][$i]) ? $_POST['fees']['mode_notes'][$i] : null,
-                            'sort_order' => isset($_POST['fees']['sort_order'][$i]) && $_POST['fees']['sort_order'][$i] !== '' ? (int)$_POST['fees']['sort_order'][$i] : 0,
-                        ];
-                    }
-                }
-                $jobModel->saveFees($id, $fees);
-            } else {
-                // Custom Text Mode: Clear structured fees
-                $jobModel->saveFees($id, []);
-            }
+            // Old Fees Logic Removed
 
             // Vacancies
-            $vac = [];
             $vacMode = $_POST['vacancy_mode'] ?? 'structured';
             
             if ($vacMode === 'structured') {
+                $vac = [];
                 if (isset($_POST['vacancies']) && is_array($_POST['vacancies'])) {
                     $vacCount = count($_POST['vacancies']['post_name'] ?? []);
                     for ($i = 0; $i < $vacCount; $i++) {
@@ -199,17 +177,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ];
             }
             
-            // Add Fees Text if mode is custom
-            if ($feeMode === 'custom' && !empty($_POST['sections']['fees_text'])) {
-                $sections[] = ['section_type' => 'other', 'title' => 'Application Fees', 'content' => $_POST['sections']['fees_text'], 'sort_order' => 2];
-            }
-            
-            // Add Vacancy Text if mode is custom
-            if ($vacMode === 'custom' && !empty($_POST['sections']['vacancy_text'])) {
-                $sections[] = ['section_type' => 'vacancy_note', 'title' => 'Vacancy Details', 'content' => $_POST['sections']['vacancy_text'], 'sort_order' => 3];
-            }
-            
-            $jobModel->saveSections($id, $sections);
+            if (!empty($sections)) { $jobModel->saveSections($id, $sections); }
 
             // FAQs
             $faqs = [];
@@ -493,80 +461,10 @@ include 'includes/header.php';
                       </datalist>
                     </div>
 
-                    <!-- Fees Repeater -->
-                    <?php
-                        // Determine Fee Mode
-                        $feesText = '';
-                        foreach ($sections as $s) {
-                            if (($s['section_type'] ?? '') === 'other' && ($s['title'] ?? '') === 'Application Fees') {
-                                $feesText = $s['content'];
-                                break;
-                            }
-                        }
-                        $isFeeCustom = !empty($feesText) && empty($fees);
-                        $feeMode = $isFeeCustom ? 'custom' : 'structured';
-                    ?>
-                    <div class="mt-8">
-                      <div class="flex items-center justify-between mb-3">
-                          <h3 class="text-lg font-semibold">Application Fees</h3>
-                          <div class="flex gap-4">
-                              <label class="inline-flex items-center">
-                                  <input type="radio" name="fee_mode" value="structured" class="form-radio" <?= $feeMode === 'structured' ? 'checked' : '' ?> onchange="toggleFeeMode(this.value)">
-                                  <span class="ml-2">Structured Table</span>
-                              </label>
-                              <label class="inline-flex items-center">
-                                  <input type="radio" name="fee_mode" value="custom" class="form-radio" <?= $feeMode === 'custom' ? 'checked' : '' ?> onchange="toggleFeeMode(this.value)">
-                                  <span class="ml-2">Custom Text</span>
-                              </label>
-                          </div>
-                      </div>
-
-                      <!-- Structured Fees -->
-                      <div id="fees_structured_wrap" class="<?= $feeMode === 'custom' ? 'hidden' : '' ?>">
-                          <div id="fees_wrap" class="space-y-3">
-                            <?php if (!empty($fees)): foreach ($fees as $f): ?>
-                            <div class="grid grid-cols-5 gap-2 fee_row">
-                              <input type="text" name="fees[category][]" class="form-input" list="fee_categories_list" placeholder="Category" value="<?= htmlspecialchars($f['category'] ?? '') ?>">
-                              <input type="number" step="0.01" name="fees[amount][]" class="form-input col-span-2" placeholder="Amount" value="<?= htmlspecialchars($f['amount'] ?? '') ?>">
-                              <input type="text" name="fees[text][]" class="form-input" placeholder="Text (e.g., Nil)" value="<?= htmlspecialchars($f['text'] ?? '') ?>">
-                              <div class="flex gap-2">
-                                <input type="number" name="fees[sort_order][]" class="form-input w-20" placeholder="#" value="<?= (int)($f['sort_order'] ?? 0) ?>">
-                                <button type="button" class="btn btn-error delete-row-btn" onclick="deleteRow(this, 'fee_row')">
-                                  <i class="fas fa-trash"></i>
-                                </button>
-                              </div>
-                            </div>
-                            <?php endforeach; else: ?>
-                            <div class="grid grid-cols-5 gap-2 fee_row">
-                              <input type="text" name="fees[category][]" class="form-input" list="fee_categories_list" placeholder="Category">
-                              <input type="number" step="0.01" name="fees[amount][]" class="form-input col-span-2" placeholder="Amount">
-                              <input type="text" name="fees[text][]" class="form-input" placeholder="Text (e.g., Nil)">
-                              <div class="flex gap-2">
-                                <input type="number" name="fees[sort_order][]" class="form-input w-20" placeholder="#" value="0">
-                                <button type="button" class="btn btn-error delete-row-btn" onclick="deleteRow(this, 'fee_row')">
-                                  <i class="fas fa-trash"></i>
-                                </button>
-                              </div>
-                            </div>
-                            <?php endif; ?>
-                          </div>
-                          <button type="button" class="btn btn-secondary mt-2" id="add_fee">+ Add Fee</button>
-                          
-                          <datalist id="fee_categories_list">
-                            <option value="General">
-                            <option value="OBC">
-                            <option value="EWS">
-                            <option value="SC">
-                            <option value="ST">
-                            <option value="Female">
-                            <option value="PH">
-                          </datalist>
-                      </div>
-
-                      <!-- Custom Fees Text -->
-                      <div id="fees_custom_wrap" class="<?= $feeMode === 'structured' ? 'hidden' : '' ?>">
-                          <textarea name="sections[fees_text]" rows="5" class="form-input richtext" placeholder="Enter application fees details..."><?= htmlspecialchars($feesText) ?></textarea>
-                      </div>
+                    <!-- Fees Section -->
+                    <div class="md:col-span-2 mt-8">
+                        <label class="form-label">Application Fees</label>
+                        <textarea id="fees" name="fees" rows="5" class="form-input richtext" placeholder="Enter application fees details..."><?= htmlspecialchars($job['fees'] ?? '') ?></textarea>
                     </div>
 
                     <!-- Age Limit Block -->
@@ -589,69 +487,10 @@ include 'includes/header.php';
                       </div>
                     </div>
 
-                    <!-- Vacancies Repeater -->
-                    <?php
-                        // Determine Vacancy Mode
-                        $vacText = '';
-                        foreach ($sections as $s) {
-                            if (($s['section_type'] ?? '') === 'vacancy_note' && ($s['title'] ?? '') === 'Vacancy Details') {
-                                $vacText = $s['content'];
-                                break;
-                            }
-                        }
-                        $isVacCustom = !empty($vacText) && empty($vacancies);
-                        $vacMode = $isVacCustom ? 'custom' : 'structured';
-                    ?>
+                    <!-- Vacancies Section -->
                     <div class="mt-8">
-                      <div class="flex items-center justify-between mb-3">
-                          <h3 class="text-lg font-semibold">Vacancy Details</h3>
-                          <div class="flex gap-4">
-                              <label class="inline-flex items-center">
-                                  <input type="radio" name="vacancy_mode" value="structured" class="form-radio" <?= $vacMode === 'structured' ? 'checked' : '' ?> onchange="toggleVacancyMode(this.value)">
-                                  <span class="ml-2">Structured Table</span>
-                              </label>
-                              <label class="inline-flex items-center">
-                                  <input type="radio" name="vacancy_mode" value="custom" class="form-radio" <?= $vacMode === 'custom' ? 'checked' : '' ?> onchange="toggleVacancyMode(this.value)">
-                                  <span class="ml-2">Custom Text</span>
-                              </label>
-                          </div>
-                      </div>
-
-                      <!-- Structured Vacancies -->
-                      <div id="vacancies_structured_wrap" class="<?= $vacMode === 'custom' ? 'hidden' : '' ?>">
-                          <div id="vacancies_wrap" class="space-y-3">
-                            <?php if (!empty($vacancies)): foreach ($vacancies as $v): ?>
-                            <div class="grid grid-cols-6 gap-2 vac_row">
-                              <input type="text" name="vacancies[post_name][]" class="form-input" placeholder="Post Name" value="<?= htmlspecialchars($v['post_name'] ?? '') ?>">
-                              <input type="text" name="vacancies[category][]" class="form-input" placeholder="Category/Discipline" value="<?= htmlspecialchars($v['category'] ?? '') ?>">
-                              <input type="number" name="vacancies[total_posts][]" class="form-input" placeholder="Total" value="<?= htmlspecialchars($v['total_posts'] ?? '') ?>">
-                              <input type="text" name="vacancies[eligibility_text][]" class="form-input" placeholder="Eligibility" value="<?= htmlspecialchars($v['eligibility_text'] ?? '') ?>">
-                              <input type="text" name="vacancies[pay_scale][]" class="form-input" placeholder="Pay Scale" value="<?= htmlspecialchars($v['pay_scale'] ?? '') ?>">
-                              <div class="flex gap-2">
-                                <input type="number" name="vacancies[sort_order][]" class="form-input w-20" placeholder="#" value="<?= (int)($v['sort_order'] ?? 0) ?>">
-                                <button type="button" class="btn btn-error delete-row-btn" onclick="deleteRow(this, 'vac_row')">
-                                  <i class="fas fa-trash"></i>
-                                </button>
-                              </div>
-                            </div>
-                            <?php endforeach; else: ?>
-                            <div class="grid grid-cols-6 gap-2 vac_row">
-                              <input type="text" name="vacancies[post_name][]" class="form-input" placeholder="Post Name">
-                              <input type="text" name="vacancies[category][]" class="form-input" placeholder="Category/Discipline">
-                              <input type="number" name="vacancies[total_posts][]" class="form-input" placeholder="Total">
-                              <input type="text" name="vacancies[eligibility_text][]" class="form-input" placeholder="Eligibility">
-                              <input type="text" name="vacancies[pay_scale][]" class="form-input" placeholder="Pay Scale">
-                              <input type="number" name="vacancies[sort_order][]" class="form-input" placeholder="#" value="0">
-                            </div>
-                            <?php endif; ?>
-                          </div>
-                          <button type="button" class="btn btn-secondary mt-2" id="add_vac">+ Add Vacancy Row</button>
-                      </div>
-
-                      <!-- Custom Vacancy Text -->
-                      <div id="vacancies_custom_wrap" class="<?= $vacMode === 'structured' ? 'hidden' : '' ?>">
-                          <textarea name="sections[vacancy_text]" rows="5" class="form-input richtext" placeholder="Enter vacancy details..."><?= htmlspecialchars($vacText) ?></textarea>
-                      </div>
+                        <label class="form-label">Vacancy Details</label>
+                        <textarea id="vacancy_details" name="vacancy_details" rows="5" class="form-input richtext" placeholder="Enter vacancy details..."><?= htmlspecialchars($job['vacancy_details'] ?? '') ?></textarea>
                     </div>
 
                     <!-- Sections: How to Apply, Mode of Exam -->
@@ -729,32 +568,6 @@ include 'includes/header.php';
                 // Specific link deletion (alias to generic)
                 function deleteLink(button) {
                     deleteRow(button, 'link_row');
-                }
-
-                // Toggle Fees Mode
-                function toggleFeeMode(mode) {
-                    const structured = document.getElementById('fees_structured_wrap');
-                    const custom = document.getElementById('fees_custom_wrap');
-                    if (mode === 'structured') {
-                        structured.classList.remove('hidden');
-                        custom.classList.add('hidden');
-                    } else {
-                        structured.classList.add('hidden');
-                        custom.classList.remove('hidden');
-                    }
-                }
-
-                // Toggle Vacancy Mode
-                function toggleVacancyMode(mode) {
-                    const structured = document.getElementById('vacancies_structured_wrap');
-                    const custom = document.getElementById('vacancies_custom_wrap');
-                    if (mode === 'structured') {
-                        structured.classList.remove('hidden');
-                        custom.classList.add('hidden');
-                    } else {
-                        structured.classList.add('hidden');
-                        custom.classList.remove('hidden');
-                    }
                 }
 
                 (function(){

@@ -185,9 +185,9 @@ class Job {
 
     public function create($data) {
         $sql = "INSERT INTO jobs (title, slug, organization, location, apply_link, last_date,
-                vacancy_count, educational_qualification, age_limit, category_id, content, attachments,
+                vacancy_count, educational_qualification, age_limit, category_id, content, fees, vacancy_details, attachments,
                 thumbnail_url, author_id, status)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         $this->db->query($sql, [
             $data['title'],
@@ -201,6 +201,8 @@ class Job {
             $data['age_limit'],
             $data['category_id'],
             $data['content'],
+            $data['fees'] ?? null,
+            $data['vacancy_details'] ?? null,
             $data['attachments'] ? json_encode($data['attachments']) : null,
             $data['thumbnail_url'] ?? null,
             isset($data['author_id']) && $data['author_id'] !== '' ? (int)$data['author_id'] : null,

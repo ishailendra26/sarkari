@@ -392,7 +392,7 @@ function renderExtras($extras) {
             <h2 class="text-xl font-bold text-gray-800 mb-3 flex items-center section-title">
                 <i class="fas <?= $icon ?> text-primary mr-2"></i><?= $title ?>
             </h2>
-            <div class="text-gray-700">
+            <div class="text-gray-700 prose max-w-none">
                 <?php if (is_array($content)):
                     // Special handling for FAQs: array of {q, a}
                     $isFaqSection = (stripos((string)$sectionTitle, 'faq') !== false);
@@ -410,17 +410,16 @@ function renderExtras($extras) {
                                     if (!is_array($qa)) continue; 
                                     $q = trim((string)($qa['q'] ?? ''));
                                     $aRaw = (string)($qa['a'] ?? '');
-                                    $aSafe = preg_match('/<\w+[^>]*>/', $aRaw) 
-                                        ? strip_tags($aRaw, '<p><br><strong><em><b><i><u><ol><ul><li><h1><h2><h3><h4><span><a>') 
-                                        : nl2br(htmlspecialchars($aRaw));
+                                    // Allow full HTML in answers for consistency
+                                    $aSafe = $aRaw;
                                 ?>
-                                <details class="border border-gray-200 rounded-lg overflow-hidden bg-white">
-                                    <summary class="cursor-pointer flex items-center justify-between px-4 py-3 font-medium text-gray-800 hover:bg-gray-50">
+                                <details class="border border-gray-200 rounded-lg overflow-hidden bg-white group">
+                                    <summary class="cursor-pointer flex items-center justify-between px-4 py-3 font-medium text-gray-800 hover:bg-gray-50 list-none">
                                         <span class="flex items-start gap-2">
                                             <i class="fas fa-question-circle text-primary mt-0.5"></i>
                                             <span><?= htmlspecialchars($q ?: 'Question') ?></span>
                                         </span>
-                                        <i class="fas fa-chevron-down text-gray-500 transition-transform duration-200 rotate-on-open"></i>
+                                        <i class="fas fa-chevron-down text-gray-500 transition-transform duration-200 group-open:rotate-180"></i>
                                     </summary>
                                     <div class="px-4 pb-4 text-gray-700 leading-relaxed">
                                         <?= $aSafe ?>
@@ -436,7 +435,7 @@ function renderExtras($extras) {
                         $isLinks = is_array($first) && (isset($first['url']) || isset($first['label']));
                     }
 
-                    // Detect if items are strings with pipe separators to render as table
+                    // Detect if items are strings with pipe separators to render as table (Legacy)
                     $hasPipe = false;
                     if (!$isLinks && !$isAgeSection) {
                         foreach ($content as $it) { if (is_string($it) && strpos($it, '|') !== false) { $hasPipe = true; break; } }
@@ -446,7 +445,7 @@ function renderExtras($extras) {
                       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <?php foreach ($content as $item): ?>
                           <?php if (is_array($item) && isset($item['url'])): ?>
-                            <a href="<?= htmlspecialchars($item['url']) ?>" target="_blank" class="link-btn">
+                            <a href="<?= htmlspecialchars($item['url']) ?>" target="_blank" class="link-btn no-underline">
                               <i class="fas fa-external-link-alt mr-2"></i>
                               <?= htmlspecialchars($item['label'] ?? $item['url']) ?>
                             </a>
@@ -493,14 +492,9 @@ function renderExtras($extras) {
                 <?php else: ?>
                     <?php
                         $raw = (string)$content;
-                        // Default rendering: preserve original formatting with safe HTML subset
-                        if (preg_match('/<\w+[^>]*>/', $raw)) {
-                            $allowedTags = '<p><br><strong><em><b><i><u><ol><ul><li><h1><h2><h3><h4><span><a>';
-                            $safe = strip_tags($raw, $allowedTags);
-                            echo $safe;
-                        } else {
-                            echo nl2br(htmlspecialchars($raw));
-                        }
+                        // Output Raw HTML to support TinyMCE tables and formatting
+                        // Wrapper .prose handles styling
+                        echo $raw;
                     ?>
                 <?php endif; ?>
             </div>
