@@ -72,14 +72,46 @@
       $swPath = $scopePath . 'OneSignalSDKWorker.js';
       $swUpdaterPath = $scopePath . 'OneSignalSDKUpdaterWorker.js';
       ?>
+      <script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async=""></script>
       <script>
-        (function () {
-              }).catch(function () { });
-            } catch (e) { }
-            try { console.warn('[OneSignal] SDK load failed', err); } catch (e) { }
-          };
-          document.head.appendChild(osScript);
-        })();
+        window.OneSignal = window.OneSignal || [];
+        OneSignal.push(function() {
+          OneSignal.init({
+            appId: "<?= $osAppId ?>",
+            <?php if (!empty($osSafariId)): ?>
+            safari_web_id: "<?= $osSafariId ?>",
+            <?php endif; ?>
+            <?php if (!empty($osSubdomain)): ?>
+            subdomainName: "<?= $osSubdomain ?>",
+            <?php endif; ?>
+            allowLocalhostAsSecureOrigin: true,
+            path: "<?= $scopePath ?>",
+            serviceWorkerPath: "OneSignalSDKWorker.js",
+            serviceWorkerUpdaterPath: "OneSignalSDKUpdaterWorker.js",
+            promptOptions: {
+              slidedown: {
+                enabled: true,
+                autoPrompt: true,
+                timeDelay: 5,
+                pageViews: 1
+              }
+            },
+            notifyButton: {
+              enable: true,
+              position: 'bottom-right',
+              colors: {
+                'circle.background': '#dc2626',
+                'circle.foreground': 'white',
+                'badge.background': '#dc2626',
+                'badge.foreground': 'white',
+                'dialog.button.background': '#dc2626',
+              }
+            }
+          });
+          console.log("[OneSignal] Init called with App ID: <?= $osAppId ?>");
+        });
+      </script>
+        });
       </script>
       <?php
     }
