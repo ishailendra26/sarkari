@@ -111,8 +111,7 @@
           console.log("[OneSignal] Init called with App ID: <?= $osAppId ?>");
         });
       </script>
-        });
-      </script>
+
       <?php
     }
   }
