@@ -68,7 +68,7 @@ class Post {
             $params[] = $category;
         }
         
-        $sql .= " ORDER BY p.published_at DESC LIMIT ? OFFSET ?";
+        $sql .= " ORDER BY COALESCE(p.published_at, p.updated_at, p.created_at) DESC LIMIT ? OFFSET ?";
         $params[] = $limit;
         $params[] = $offset;
         

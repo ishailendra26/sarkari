@@ -81,6 +81,23 @@ if (!empty($faqs)) {
     }
 }
 
+// Sections (How to Download, Instructions, etc.)
+$sections = $admitModel->getSections((int)$admit['id']);
+if (!empty($sections)) {
+    foreach ($sections as $sec) {
+        $key = $sec['title'] ?: ucfirst(str_replace('_', ' ', $sec['section_type']));
+        // Handle name collision or just unique enough key handling if needed is handled by renderExtras somewhat
+        // But let's act like result.php where we append index if collision
+        $i = 2;
+        $origKey = $key;
+        while (array_key_exists($key, $extras)) {
+            $key = $origKey . ' (' . $i . ')';
+            $i++;
+        }
+        $extras[$key] = $sec['content'];
+    }
+}
+
 // Assemble in order: Instruction, Events, Links, FAQs
 if (!empty(trim(strip_tags($instructionHtml)))) { $extras['Important Instruction'] = $instructionHtml; }
 if (!empty($eventItems)) { $extras['Important Events'] = $eventItems; }

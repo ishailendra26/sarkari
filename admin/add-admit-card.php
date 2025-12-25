@@ -111,16 +111,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 catch (Throwable $ex) { error_log('add-admit saveLinks error: ' . $ex->getMessage()); }
             }
 
-            // Sections (e.g., Instructions Rich text already exists; keep flexible too)
+            // Sections (Dynamic Repeater)
             $sections = [];
-            if (!empty($_POST['sections']['how_to_apply'])) {
-                $sections[] = ['section_type' => 'how_to_apply', 'title' => 'How to Apply', 'content' => $_POST['sections']['how_to_apply'], 'sort_order' => 0];
-            }
-            if (!empty($_POST['sections']['mode_of_exam'])) {
-                $sections[] = ['section_type' => 'mode_of_exam', 'title' => 'Mode of Exam', 'content' => $_POST['sections']['mode_of_exam'], 'sort_order' => 1];
-            }
-            if (!empty($_POST['sections']['other'])) {
-                $sections[] = ['section_type' => 'other', 'title' => 'Notes', 'content' => $_POST['sections']['other'], 'sort_order' => 2];
+            $st = $_POST['sections']['section_type'] ?? [];
+            $sti = $_POST['sections']['title'] ?? [];
+            $sc = $_POST['sections']['content'] ?? [];
+            $so = $_POST['sections']['sort_order'] ?? [];
+            
+            for ($i=0; $i<count($st); $i++) {
+                if (empty($sc[$i])) continue;
+                $sections[] = [
+                    'section_type' => $st[$i] ?: 'other',
+                    'title' => $sti[$i] ?: null,
+                    'content' => $sc[$i] ?: '',
+                    'sort_order' => isset($so[$i]) && $so[$i] !== '' ? (int)$so[$i] : 0
+                ];
             }
             if (!empty($sections)) {
                 try { $admitCardModel->saveSections($admitId, $sections); }
@@ -328,20 +333,28 @@ include 'includes/header.php';
                       <button type="button" class="btn btn-secondary mt-2" id="add_link">+ Add Link</button>
                     </div>
 
-                    <!-- Sections: How to Apply, Mode of Exam, Notes -->
-                    <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <label class="form-label">How to Apply</label>
-                        <textarea name="sections[how_to_apply]" rows="3" class="form-input richtext"></textarea>
+                    <!-- Sections Repeater -->
+                    <div class="mt-8">
+                      <h3 class="text-lg font-semibold mb-3">Sections</h3>
+                      <div id="sections_wrapper" class="space-y-3">
+                        <div class="grid grid-cols-12 gap-2 section_row">
+                            <div class="col-span-12 md:col-span-3">
+                                <select name="sections[section_type][]" class="form-input">
+                                    <option value="how_to_download_admit_card" selected>How to Download Admit Card</option>
+                                    <option value="exam_instructions">Exam Instructions</option>
+                                    <option value="important_notes">Important Notes</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-span-12 md:col-span-8"><input type="text" name="sections[title][]" class="form-input" placeholder="Section Title"></div>
+                            <div class="col-span-6 md:col-span-1"><input type="number" name="sections[sort_order][]" class="form-input" placeholder="#"></div>
+                            <div class="col-span-12"><textarea name="sections[content][]" id="section_content_new" rows="4" class="form-input richtext" placeholder="Content (supports HTML)"></textarea></div>
+                            <div class="col-span-12 text-right">
+                                <button type="button" class="btn btn-error delete-row-btn" onclick="deleteRow(this, 'section_row')"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
                       </div>
-                      <div>
-                        <label class="form-label">Mode of Exam</label>
-                        <textarea name="sections[mode_of_exam]" rows="3" class="form-input richtext"></textarea>
-                      </div>
-                      <div>
-                        <label class="form-label">Notes</label>
-                        <textarea name="sections[other]" rows="3" class="form-input richtext"></textarea>
-                      </div>
+                      <button type="button" class="btn btn-secondary mt-2" onclick="cloneRow('sections_wrapper','section_row')"><i class="fas fa-plus mr-1"></i>Add Section</button>
                     </div>
 
                     <!-- FAQs Repeater -->
@@ -456,9 +469,28 @@ include 'includes/header.php';
                     const first = wrap.querySelector('.' + rowClass);
                     if (!first) return;
                     const node = first.cloneNode(true);
+                    
+                    // Unique suffix for IDs
+                    const uniqueSuffix = Date.now() + '_' + Math.floor(Math.random() * 1000);
+
                     node.querySelectorAll('input').forEach(i=>{ 
                         if(i.type==='checkbox'){ i.checked=true; } else { i.value=''; if (i.classList && i.classList.contains('custom-label-input')) { i.style.display='none'; i.required=false; } }
                     });
+                    
+                   // Handle Textareas & TinyMCE
+                   node.querySelectorAll('textarea').forEach(t => {
+                       t.value = '';
+                       if (t.classList.contains('richtext')) {
+                           t.removeAttribute('id');
+                           t.id = 'editor_' + uniqueSuffix;
+                           t.style.display = 'block';
+                           t.style.visibility = 'visible';
+                           const parent = t.parentElement;
+                           const tox = parent.querySelector('.tox-tinymce');
+                           if (tox) tox.remove();
+                       }
+                   });
+
                     node.querySelectorAll('select').forEach(s=>{ 
                         s.selectedIndex = 0; 
                         if (s.classList && s.classList.contains('link-label-select')) {
@@ -467,6 +499,21 @@ include 'includes/header.php';
                     });
                     node.querySelectorAll('button').forEach(b=>{ if (b.classList && b.classList.contains('delete-row-btn')) { b.onclick = function(){ deleteRow(this, rowClass); }; } });
                     wrap.appendChild(node);
+
+                    // Re-init TinyMCE
+                    node.querySelectorAll('textarea.richtext').forEach(t => {
+                        if (window.tinymce) {
+                            tinymce.init({
+                                selector: '#' + t.id,
+                                plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table help wordcount',
+                                toolbar: 'undo redo | blocks | bold italic underline forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | table link image media | removeformat | preview code fullscreen',
+                                menubar: 'file edit view insert format tools table help',
+                                height: 300,
+                                branding: false,
+                                convert_urls: false
+                            });
+                        }
+                    });
                   }
                   document.getElementById('add_event')?.addEventListener('click', ()=> cloneRow('events_wrap','ev_row'));
                   document.getElementById('add_link')?.addEventListener('click', ()=> cloneRow('links_wrap','link_row'));

@@ -378,6 +378,7 @@ function renderExtras($extras) {
         if (strpos($t, 'vacancy') !== false || strpos($t, 'post') !== false) return 'fa-briefcase';
         if (strpos($t, 'how to apply') !== false) return 'fa-file-signature';
         if (strpos($t, 'mode of exam') !== false || strpos($t, 'exam mode') !== false) return 'fa-clipboard-check';
+        if (strpos($t, 'download') !== false) return 'fa-download';
         if (strpos($t, 'link') !== false) return 'fa-link';
         if ($t === 'faq' || $t === 'faqs' || strpos($t, 'faq') !== false) return 'fa-question-circle';
         if (strpos($t, 'instruction') !== false || strpos($t, 'note') !== false) return 'fa-exclamation-triangle';

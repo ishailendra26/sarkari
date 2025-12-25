@@ -37,6 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $send_push = isset($_POST['send_push']);
     $thumbnail_url = sanitizeInput($_POST['thumbnail_url'] ?? '');
     $author_id = isset($_POST['author_id']) && $_POST['author_id'] !== '' ? (int)$_POST['author_id'] : null;
+    $published_at = $_POST['published_at'] ?? '';
     
     if ($title && $organization && $description) {
         $slugBase = slugify($title);
@@ -53,7 +54,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'required_documents' => $required_documents,
             'status' => $status,
             'thumbnail_url' => $thumbnail_url ?: null,
-            'author_id' => $author_id
+            'status' => $status,
+            'thumbnail_url' => $thumbnail_url ?: null,
+            'author_id' => $author_id,
+            'published_at' => $published_at ? date('Y-m-d H:i:s', strtotime($published_at)) : null
         ];
         
         try {
@@ -96,13 +100,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $admitCardModel->saveLinks($id, $links);
 
-            // Sections (instructions_ext, exam_day_guidelines)
+            // Sections (Dynamic Repeater)
             $sections = [];
-            if (!empty($_POST['sections']['instructions_ext'])) {
-                $sections[] = ['section_type' => 'instructions_ext', 'title' => 'More Instructions', 'content' => $_POST['sections']['instructions_ext'], 'sort_order' => 0];
-            }
-            if (!empty($_POST['sections']['exam_day_guidelines'])) {
-                $sections[] = ['section_type' => 'exam_day_guidelines', 'title' => 'Exam Day Guidelines', 'content' => $_POST['sections']['exam_day_guidelines'], 'sort_order' => 1];
+            $st = $_POST['sections']['section_type'] ?? [];
+            $sti = $_POST['sections']['title'] ?? [];
+            $sc = $_POST['sections']['content'] ?? [];
+            $so = $_POST['sections']['sort_order'] ?? [];
+
+            for ($i=0; $i<count($st); $i++) {
+                if (empty($sc[$i])) continue;
+                $sections[] = [
+                    'section_type' => $st[$i] ?: 'other',
+                    'title' => $sti[$i] ?: null,
+                    'content' => $sc[$i] ?: '',
+                    'sort_order' => isset($so[$i]) && $so[$i] !== '' ? (int)$so[$i] : 0
+                ];
             }
             $admitCardModel->saveSections($id, $sections);
 
@@ -251,6 +263,12 @@ include 'includes/header.php';
                                 <option value="published" <?= $admitCard['status'] === 'published' ? 'selected' : '' ?>>Published</option>
                             </select>
                         </div>
+                        
+                        <div>
+                            <label class="form-label">Published Date</label>
+                            <input type="datetime-local" name="published_at" class="form-input" 
+                                   value="<?= !empty($admitCard['published_at']) ? date('Y-m-d\TH:i', strtotime($admitCard['published_at'])) : '' ?>">
+                        </div>
                         <div class="md:col-span-2">
                             <label class="inline-flex items-center gap-2">
                                 <input type="checkbox" name="send_push" <?= isset($_POST['send_push']) ? 'checked' : '' ?>>
@@ -336,24 +354,49 @@ include 'includes/header.php';
                       <button type="button" class="btn btn-secondary mt-2" id="add_link">+ Add Link</button>
                     </div>
 
-                    <!-- Sections: More Instructions + Exam Day Guidelines -->
-                    <?php 
-                      $instrExt = '';
-                      $examGuides = '';
-                      foreach ($sections as $s) {
-                        if (($s['section_type'] ?? '') === 'instructions_ext') $instrExt = $s['content'] ?? '';
-                        if (($s['section_type'] ?? '') === 'exam_day_guidelines') $examGuides = $s['content'] ?? '';
-                      }
-                    ?>
-                    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label class="form-label">More Instructions</label>
-                        <textarea name="sections[instructions_ext]" rows="4" class="form-input richtext"><?= htmlspecialchars($instrExt) ?></textarea>
+                    <!-- Sections Repeater -->
+                    <div class="mt-8">
+                      <h3 class="text-lg font-semibold mb-3">Sections</h3>
+                      <div id="sections_wrapper" class="space-y-3">
+                        <?php if (!empty($sections)): $i=0; foreach ($sections as $sc): ?>
+                        <div class="grid grid-cols-12 gap-2 section_row">
+                            <div class="col-span-12 md:col-span-3">
+                                <select name="sections[section_type][]" class="form-input">
+                                    <option value="how_to_download_admit_card" <?= ($sc['section_type'] ?? '') === 'how_to_download_admit_card' ? 'selected' : '' ?>>How to Download Admit Card</option>
+                                    <option value="exam_instructions" <?= ($sc['section_type'] ?? '') === 'exam_instructions' ? 'selected' : '' ?>>Exam Instructions</option>
+                                    <option value="important_notes" <?= ($sc['section_type'] ?? '') === 'important_notes' ? 'selected' : '' ?>>Important Notes</option>
+                                    <option value="how_to_apply" <?= ($sc['section_type'] ?? '') === 'how_to_apply' ? 'selected' : '' ?>>How to Apply (Legacy)</option>
+                                    <option value="mode_of_exam" <?= ($sc['section_type'] ?? '') === 'mode_of_exam' ? 'selected' : '' ?>>Mode of Exam (Legacy)</option>
+                                    <option value="other" <?= ($sc['section_type'] ?? '') === 'other' ? 'selected' : '' ?>>Other</option>
+                                </select>
+                            </div>
+                            <div class="col-span-12 md:col-span-8"><input type="text" name="sections[title][]" class="form-input" value="<?= htmlspecialchars($sc['title'] ?? '') ?>" placeholder="Section Title"></div>
+                            <div class="col-span-6 md:col-span-1"><input type="number" name="sections[sort_order][]" class="form-input" value="<?= (int)($sc['sort_order'] ?? 0) ?>" placeholder="#"></div>
+                            <div class="col-span-12"><textarea name="sections[content][]" id="section_content_<?= $i ?>" rows="4" class="form-input richtext" placeholder="Content (supports HTML)"><?= htmlspecialchars($sc['content'] ?? '') ?></textarea></div>
+                            <div class="col-span-12 text-right">
+                                <button type="button" class="btn btn-error delete-row-btn" onclick="deleteRow(this, 'section_row')"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                        <?php $i++; endforeach; else: ?>
+                        <div class="grid grid-cols-12 gap-2 section_row">
+                            <div class="col-span-12 md:col-span-3">
+                                <select name="sections[section_type][]" class="form-input">
+                                    <option value="how_to_download_admit_card" selected>How to Download Admit Card</option>
+                                    <option value="exam_instructions">Exam Instructions</option>
+                                    <option value="important_notes">Important Notes</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-span-12 md:col-span-8"><input type="text" name="sections[title][]" class="form-input" placeholder="Section Title"></div>
+                            <div class="col-span-6 md:col-span-1"><input type="number" name="sections[sort_order][]" class="form-input" placeholder="#"></div>
+                            <div class="col-span-12"><textarea name="sections[content][]" id="section_content_new" rows="4" class="form-input richtext" placeholder="Content (supports HTML)"></textarea></div>
+                            <div class="col-span-12 text-right">
+                                <button type="button" class="btn btn-error delete-row-btn" onclick="deleteRow(this, 'section_row')"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                        <?php endif; ?>
                       </div>
-                      <div>
-                        <label class="form-label">Exam Day Guidelines</label>
-                        <textarea name="sections[exam_day_guidelines]" rows="4" class="form-input richtext"><?= htmlspecialchars($examGuides) ?></textarea>
-                      </div>
+                      <button type="button" class="btn btn-secondary mt-2" onclick="cloneRow('sections_wrapper','section_row')"><i class="fas fa-plus mr-1"></i>Add Section</button>
                     </div>
 
                     <!-- FAQs Repeater -->
@@ -516,35 +559,65 @@ include 'includes/header.php';
                     const first = wrap.querySelector('.' + rowClass);
                     if (!first) return;
                     const node = first.cloneNode(true);
+                    
+                    // Unique suffix
+                    const uniqueSuffix = Date.now() + '_' + Math.floor(Math.random() * 1000);
+
                     node.querySelectorAll('input').forEach(i=>{ 
                         if(i.type==='checkbox'){ 
                             i.checked=true; 
                         } else { 
                             i.value='';
-                            // Reset all custom inputs display
-                            if(i.classList.contains('custom-label-input') || 
-                               i.classList.contains('custom-event-input')) {
+                            if(i.classList.contains('custom-label-input') || i.classList.contains('custom-event-input')) {
                                 i.style.display = 'none';
                                 i.required = false;
                             }
                         }
                     });
+
+                    // Handle Textareas & TinyMCE
+                    node.querySelectorAll('textarea').forEach(t => {
+                       t.value = '';
+                       if (t.classList.contains('richtext')) {
+                           t.removeAttribute('id');
+                           t.id = 'editor_' + uniqueSuffix;
+                           t.style.display = 'block';
+                           t.style.visibility = 'visible';
+                           const parent = t.parentElement;
+                           const tox = parent.querySelector('.tox-tinymce');
+                           if (tox) tox.remove();
+                       }
+                    });
+
                     node.querySelectorAll('select').forEach(s=>{ 
                         s.selectedIndex = 0;
-                        // Preserve onchange handlers
                         if(s.classList.contains('link-label-select')) {
                             s.onchange = function() { handleLinkLabelChange(this); };
                         } else if(s.classList.contains('event-type-select')) {
                             s.onchange = function() { handleEventTypeChange(this); };
                         }
                     });
-                    // Preserve delete button handlers
                     node.querySelectorAll('button').forEach(b => {
                         if(b.classList.contains('delete-row-btn')) {
                             b.onclick = function() { deleteRow(this, rowClass); };
                         }
                     });
                     wrap.appendChild(node);
+                    
+                    // Re-init TinyMCE
+                    node.querySelectorAll('textarea.richtext').forEach(t => {
+                        if (window.tinymce) {
+                            tinymce.init({
+                                selector: '#' + t.id,
+                                plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table help wordcount',
+                                toolbar: 'undo redo | blocks | bold italic underline forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | table link image media | removeformat | preview code fullscreen',
+                                menubar: 'file edit view insert format tools table help',
+                                height: 300,
+                                branding: false,
+                                convert_urls: false
+                            });
+                        }
+                    });
                   }
                   document.getElementById('add_event')?.addEventListener('click', ()=> cloneRow('events_wrap','ev_row'));
                   document.getElementById('add_link')?.addEventListener('click', ()=> cloneRow('links_wrap','link_row'));

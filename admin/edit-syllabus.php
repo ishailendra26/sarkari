@@ -37,6 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $send_push = isset($_POST['send_push']);
     $thumbnail_url = sanitizeInput($_POST['thumbnail_url'] ?? '');
     $author_id = isset($_POST['author_id']) && $_POST['author_id'] !== '' ? (int)$_POST['author_id'] : null;
+    $published_at = $_POST['published_at'] ?? '';
     
     if ($title && $organization && $description) {
         $slugBase = slugify($title);
@@ -52,7 +53,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'sections' => $sections,
             'status' => $status,
             'thumbnail_url' => $thumbnail_url ?: null,
-            'author_id' => $author_id
+            'author_id' => $author_id,
+            'published_at' => $published_at ? date('Y-m-d H:i:s', strtotime($published_at)) : null
         ];
         
         try {
@@ -175,6 +177,12 @@ include 'includes/header.php';
                                 <option value="draft" <?= $syllabus['status'] === 'draft' ? 'selected' : '' ?>>Draft</option>
                                 <option value="published" <?= $syllabus['status'] === 'published' ? 'selected' : '' ?>>Published</option>
                             </select>
+                        </div>
+                        
+                        <div>
+                            <label class="form-label">Published Date</label>
+                            <input type="datetime-local" name="published_at" class="form-input" 
+                                   value="<?= !empty($syllabus['published_at']) ? date('Y-m-d\TH:i', strtotime($syllabus['published_at'])) : '' ?>">
                         </div>
                         <div class="md:col-span-2">
                             <label class="inline-flex items-center gap-2">

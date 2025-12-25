@@ -257,6 +257,26 @@ include 'includes/header.php';
                             <button type="button" class="btn btn-secondary mt-2" onclick="cloneRow('links_wrapper','link_row')"><i class="fas fa-plus mr-1"></i>Add Link</button>
                         </div>
 
+                        <!-- Sections Repeater -->
+                        <div class="md:col-span-2">
+                             <label class="form-label">Sections</label>
+                             <div id="sections_wrapper" class="space-y-3">
+                                <div class="section_row grid grid-cols-12 gap-2">
+                                    <div class="col-span-12 md:col-span-3">
+                                        <select name="sections[section_type][]" class="form-input">
+                                            <option value="how_to_check" selected>How to Check Result</option>
+                                            <option value="notes">Important Notes</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-span-12 md:col-span-8"><input type="text" name="sections[title][]" class="form-input" placeholder="Section Title"></div>
+                                    <div class="col-span-6 md:col-span-1"><input type="number" name="sections[sort_order][]" class="form-input" placeholder="#"></div>
+                                    <div class="col-span-12"><textarea name="sections[content][]" id="section_content_new" rows="4" class="form-input richtext" placeholder="Content (supports HTML)"></textarea></div>
+                                </div>
+                             </div>
+                             <button type="button" class="btn btn-secondary mt-2" onclick="cloneRow('sections_wrapper','section_row')"><i class="fas fa-plus mr-1"></i>Add Section</button>
+                        </div>
+
                         <div>
                             <label class="form-label">Author</label>
                             <select name="author_id" class="form-input">
@@ -373,12 +393,34 @@ include 'includes/header.php';
                     const row = wrap.querySelector('.' + rowClass);
                     if (!row) return;
                     const clone = row.cloneNode(true);
+                    
+                    // Generate unique suffix
+                    const uniqueSuffix = Date.now() + '_' + Math.floor(Math.random() * 1000);
+
                     // clear inputs/textareas and reset custom inputs
                     clone.querySelectorAll('input').forEach(i=>{
                         if (i.type==='checkbox' || i.type==='radio') { i.checked = false; }
                         else { i.value = ''; if (i.classList && i.classList.contains('custom-label-input')) { i.style.display = 'none'; } }
                     });
-                    clone.querySelectorAll('textarea').forEach(t=>t.value='');
+                    
+                    // Handle Textareas & TinyMCE
+                    clone.querySelectorAll('textarea').forEach(t => {
+                        t.value = '';
+                        if (t.classList.contains('richtext')) {
+                            // Remove any existing ID to avoid conflicts before assigning new one
+                            t.removeAttribute('id');
+                            // Assign new unique ID
+                            t.id = 'editor_' + uniqueSuffix;
+                            // Ensure the style is reset if TinyMCE modified it
+                            t.style.display = 'block';
+                            t.style.visibility = 'visible';
+                            // Remove TinyMCE structure if cloned
+                            const parent = t.parentElement;
+                            const tox = parent.querySelector('.tox-tinymce');
+                            if (tox) tox.remove();
+                        }
+                    });
+
                     clone.querySelectorAll('select').forEach(s=>{
                         s.selectedIndex = 0;
                         if (s.classList && s.classList.contains('link-label-select')) {
@@ -391,6 +433,21 @@ include 'includes/header.php';
                         }
                     });
                     wrap.appendChild(clone);
+
+                    // Re-init TinyMCE for the new textarea
+                    clone.querySelectorAll('textarea.richtext').forEach(t => {
+                        if (window.tinymce) {
+                            tinymce.init({
+                                selector: '#' + t.id,
+                                plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table help wordcount',
+                                toolbar: 'undo redo | blocks | bold italic underline forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | table link image media | removeformat | preview code fullscreen',
+                                menubar: 'file edit view insert format tools table help',
+                                height: 300,
+                                branding: false,
+                                convert_urls: false
+                            });
+                        }
+                    });
                 }
                 </script>
             </div>

@@ -53,6 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $send_push = isset($_POST['send_push']);
     $thumbnail_url = sanitizeInput($_POST['thumbnail_url'] ?? '');
     $author_id = isset($_POST['author_id']) && $_POST['author_id'] !== '' ? (int)$_POST['author_id'] : null;
+    $published_at = $_POST['published_at'] ?? '';
     
     if ($title && $organization && $category_id) {
         $slugBase = slugify($title);
@@ -74,7 +75,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'vacancy_details' => $vacancy_details,
             'status' => $status,
             'thumbnail_url' => $thumbnail_url ?: null,
-            'author_id' => $author_id
+            'author_id' => $author_id,
+            'published_at' => $published_at ? date('Y-m-d H:i:s', strtotime($published_at)) : null
         ];
         
         try {
@@ -368,6 +370,12 @@ include 'includes/header.php';
                                 <option value="published" <?= ($job['status'] === 'published') ? 'selected' : '' ?>>Published</option>
                                 <option value="draft" <?= ($job['status'] === 'draft') ? 'selected' : '' ?>>Draft</option>
                             </select>
+                        </div>
+                        
+                        <div>
+                            <label class="form-label">Published Date</label>
+                            <input type="datetime-local" name="published_at" class="form-input" 
+                                   value="<?= !empty($job['published_at']) ? date('Y-m-d\TH:i', strtotime($job['published_at'])) : '' ?>">
                         </div>
                         <div class="md:col-span-2">
                             <label class="inline-flex items-center gap-2">

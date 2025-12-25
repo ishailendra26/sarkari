@@ -36,6 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $send_push = isset($_POST['send_push']);
     $thumbnail_url = sanitizeInput($_POST['thumbnail_url'] ?? '');
     $author_id = isset($_POST['author_id']) && $_POST['author_id'] !== '' ? (int)$_POST['author_id'] : null;
+    $published_at = $_POST['published_at'] ?? '';
     
     if ($title && $organization && $description) {
         $slugBase = slugify($title);
@@ -50,7 +51,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'download_url' => $download_url,
             'status' => $status,
             'thumbnail_url' => $thumbnail_url ?: null,
-            'author_id' => $author_id
+            'author_id' => $author_id,
+            'published_at' => $published_at ? date('Y-m-d H:i:s', strtotime($published_at)) : null
         ];
         
         try {
@@ -348,7 +350,7 @@ include 'includes/header.php';
                         <div class="md:col-span-2">
                             <label class="form-label">Sections</label>
                             <div id="sections_wrapper" class="space-y-3">
-                                <?php if ($existingSections): foreach ($existingSections as $sc): ?>
+                                <?php if ($existingSections): $i=0; foreach ($existingSections as $sc): ?>
                                 <div class="section_row grid grid-cols-12 gap-2">
                                     <div class="col-span-12 md:col-span-3">
                                         <select name="sections[section_type][]" class="form-input">
@@ -359,9 +361,9 @@ include 'includes/header.php';
                                     </div>
                                     <div class="col-span-12 md:col-span-8"><input type="text" name="sections[title][]" class="form-input" value="<?= htmlspecialchars($sc['title'] ?? '') ?>" placeholder="Section Title"></div>
                                     <div class="col-span-6 md:col-span-1"><input type="number" name="sections[sort_order][]" class="form-input" value="<?= (int)($sc['sort_order'] ?? 0) ?>" placeholder="#"></div>
-                                    <div class="col-span-12"><textarea name="sections[content][]" rows="4" class="form-input" placeholder="Content (supports HTML)"><?= htmlspecialchars($sc['content'] ?? '') ?></textarea></div>
+                                    <div class="col-span-12"><textarea name="sections[content][]" id="section_content_<?= $i ?>" rows="4" class="form-input richtext" placeholder="Content (supports HTML)"><?= htmlspecialchars($sc['content'] ?? '') ?></textarea></div>
                                 </div>
-                                <?php endforeach; else: ?>
+                                <?php $i++; endforeach; else: $i=0; ?>
                                 <div class="section_row grid grid-cols-12 gap-2">
                                     <div class="col-span-12 md:col-span-3">
                                         <select name="sections[section_type][]" class="form-input">
@@ -372,7 +374,7 @@ include 'includes/header.php';
                                     </div>
                                     <div class="col-span-12 md:col-span-8"><input type="text" name="sections[title][]" class="form-input" placeholder="Section Title"></div>
                                     <div class="col-span-6 md:col-span-1"><input type="number" name="sections[sort_order][]" class="form-input" placeholder="#"></div>
-                                    <div class="col-span-12"><textarea name="sections[content][]" rows="4" class="form-input" placeholder="Content (supports HTML)"></textarea></div>
+                                    <div class="col-span-12"><textarea name="sections[content][]" id="section_content_new" rows="4" class="form-input richtext" placeholder="Content (supports HTML)"></textarea></div>
                                 </div>
                                 <?php endif; ?>
                             </div>
@@ -441,6 +443,12 @@ include 'includes/header.php';
                                 <option value="published" <?= $result['status'] === 'published' ? 'selected' : '' ?>>Published</option>
                             </select>
                         </div>
+                        
+                        <div>
+                            <label class="form-label">Published Date</label>
+                            <input type="datetime-local" name="published_at" class="form-input" 
+                                   value="<?= !empty($result['published_at']) ? date('Y-m-d\TH:i', strtotime($result['published_at'])) : '' ?>">
+                        </div>
                         <div class="md:col-span-2">
                             <label class="inline-flex items-center gap-2">
                                 <input type="checkbox" name="send_push" <?= isset($_POST['send_push']) ? 'checked' : '' ?>>
@@ -466,17 +474,38 @@ include 'includes/header.php';
                     const row = wrap.querySelector('.' + rowClass);
                     if (!row) return;
                     const clone = row.cloneNode(true);
+                    
+                    // Generate unique suffix
+                    const uniqueSuffix = Date.now() + '_' + Math.floor(Math.random() * 1000);
+
                     clone.querySelectorAll('input').forEach(i=>{
                         if (i.type==='checkbox' || i.type==='radio'){
-                            // default off for generic rows
                             i.checked = false;
                         } else if (i.type==='hidden' && i.name && i.name.indexOf('faqs[is_active]') === 0) {
-                            // reset hidden is_active for FAQ rows
                             i.value = '1';
                         } else {
                             i.value='';
                         }
                     });
+
+                    // Handle Textareas & TinyMCE
+                    clone.querySelectorAll('textarea').forEach(t => {
+                        t.value = '';
+                        if (t.classList.contains('richtext')) {
+                            // Remove any existing ID to avoid conflicts before assigning new one
+                            t.removeAttribute('id');
+                            // Assign new unique ID
+                            t.id = 'editor_' + uniqueSuffix;
+                            // Ensure the style is reset if TinyMCE modified it
+                            t.style.display = 'block';
+                            t.style.visibility = 'visible';
+                            // Remove TinyMCE structure if cloned
+                            const parent = t.parentElement;
+                            const tox = parent.querySelector('.tox-tinymce');
+                            if (tox) tox.remove();
+                        }
+                    });
+
                     // If this is an FAQ row, set checkbox to checked by default
                     if (rowClass === 'faq_row') {
                         const cb = clone.querySelector('.faq_active_cb');
@@ -484,8 +513,23 @@ include 'includes/header.php';
                         if (cb) cb.checked = true;
                         if (hidden) hidden.value = '1';
                     }
-                    clone.querySelectorAll('textarea').forEach(t=>t.value='');
+                    
                     wrap.appendChild(clone);
+
+                    // Re-init TinyMCE for the new textarea
+                    clone.querySelectorAll('textarea.richtext').forEach(t => {
+                        if (window.tinymce) {
+                            tinymce.init({
+                                selector: '#' + t.id,
+                                plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table help wordcount',
+                                toolbar: 'undo redo | blocks | bold italic underline forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | table link image media | removeformat | preview code fullscreen',
+                                menubar: 'file edit view insert format tools table help',
+                                height: 300,
+                                branding: false,
+                                convert_urls: false
+                            });
+                        }
+                    });
                 }
                 document.addEventListener('change', function(e){
                   const cb = e.target;
