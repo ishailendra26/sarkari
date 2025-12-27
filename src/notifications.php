@@ -36,9 +36,13 @@ function onesignal_send_notification(string $heading, string $content, string $u
         return ['success' => false, 'status' => 0, 'response' => 'OneSignal App ID or REST API Key is missing'];
     }
 
+    // Default to 'Active Subscriptions' if no segments or filters are provided
+    if (empty($extraFields['included_segments']) && empty($extraFields['include_player_ids'])) {
+        $extraFields['included_segments'] = ['Active Subscriptions'];
+    }
+
     $payload = array_merge([
         'app_id' => $appId,
-        'included_segments' => ['Subscribed Users'],
         'headings' => ['en' => $heading],
         'contents' => ['en' => $content],
         'url' => $url,

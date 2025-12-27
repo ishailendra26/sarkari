@@ -1,5 +1,5 @@
-.htaccess
+#.htaccess
 # Ignore configuration files
-src/config.php      
+#src/config.php      
 # IGNORE UPLOADED FILES
 uploads/

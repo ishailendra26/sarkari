@@ -1,6 +1,11 @@
 # Enable Apache rewrite engine
 RewriteEngine On
-RewriteBase /sarkari/
+
+# Force non-www: redirect www.examsz.in to examsz.in (Only affects Production)
+RewriteCond %{HTTP_HOST} ^www\.examsz\.in [NC]
+RewriteRule ^(.*)$ https://examsz.in/$1 [L,R=301]
+
+# RewriteBase is removed to make this file works on both Localhost (subdir) and Production (root) automatically.
 
 # Serve existing files/directories directly
 RewriteCond %{REQUEST_FILENAME} -f [OR]
