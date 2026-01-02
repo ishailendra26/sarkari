@@ -40,22 +40,33 @@ $pageTitle = $pageTitle ?? 'Admin Dashboard';
             overflow: hidden;
         }
     </style>
-    <!-- TinyMCE Rich Text Editor -->
-    <script src="https://cdn.tiny.cloud/1/cdxz570jkij9j6pk03so50yve8zbiai22vxotiw8l1cir2q7/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    <!-- CKEditor 5 Rich Text Editor -->
+    <script src="https://cdn.ckeditor.com/ckeditor5/40.2.0/classic/ckeditor.js"></script>
+    <style>
+        .ck-editor__editable {
+            min-height: 400px;
+        }
+    </style>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            if (window.tinymce) {
-                tinymce.init({
-                    selector: 'textarea.richtext',
-                    plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table help wordcount',
-                    toolbar: 'undo redo | blocks | bold italic underline forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | table link image media | removeformat | preview code fullscreen',
-                    menubar: 'file edit view insert format tools table help',
-                    height: 420,
-                    content_style: 'body { font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; font-size:14px }',
-                    branding: false,
-                    convert_urls: false,
-                });
-            }
+            const richTextAreas = document.querySelectorAll('textarea.richtext');
+            richTextAreas.forEach(element => {
+                ClassicEditor
+                    .create(element, {
+                        toolbar: ['heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote', 'insertTable', 'undo', 'redo'],
+                        heading: {
+                            options: [
+                                { model: 'paragraph', title: 'Paragraph', class: 'ck-heading_paragraph' },
+                                { model: 'heading1', view: 'h1', title: 'Heading 1', class: 'ck-heading_heading1' },
+                                { model: 'heading2', view: 'h2', title: 'Heading 2', class: 'ck-heading_heading2' },
+                                { model: 'heading3', view: 'h3', title: 'Heading 3', class: 'ck-heading_heading3' }
+                            ]
+                        }
+                    })
+                    .catch(error => {
+                        console.error(error);
+                    });
+            });
         });
     </script>
 </head>
